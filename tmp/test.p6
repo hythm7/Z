@@ -1,8 +1,10 @@
 #!/usr/bin/env perl6
 
+use GTK::Simple::Button;
+
 use lib <lib>;
-use Z;
+use Z::Cipher::Sym;
 
-my $z = Z.new;
+my $s = "abcdefgh";
 
-$z.run;
+say $s.comb.map( -> $sym {Z::Cipher::Sym.new(label => "l") });

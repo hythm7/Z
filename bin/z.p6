@@ -2,15 +2,14 @@
 
 use lib <lib>;
 use Z;
+use Z::Cipher;
 
+my $filename = "cipher/z340".IO;
 my $z = Z.new();
 
-my @sym = <a b c d e f g h i j k m n o p q r s t u v w x y z>;
+my $grid = $z.gen-grid(:$filename);
+$z.set-content($grid);
 
-my @cipher = $z.gen-cipher-from-sym(:x(17), :y(20), :sym(@sym));
-
-say @cipher;
-
-#$z.run();
+$z.run();
 
 
