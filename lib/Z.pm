@@ -2,21 +2,29 @@ use GTK::Simple;
 use GTK::Simple::App;
 
 use Z::Cipher;
+use Z::Cipher::File;
 
 unit class Z;
   also is GTK::Simple::App;
 
-method gen-grid (:$filename) {
-  my @pairs;
-  my $cipher = Z::Cipher.new: :$filename;
-  
-	loop (my $j = 0; $j < $cipher.no-of-col; $j++) {
-	  loop (my $i = 0; $i < $cipher.no-of-row; $i++) {
-        my $pair =  [$j, $i, 1, 1] => $cipher.sym[$i][$j];
-				push @pairs, $pair;
-		}
-	}
-	say $cipher.sym[0][7].^methods;;
-	return GTK::Simple::Grid.new(@pairs);
+method load-cipher (:$filename) {
+  my Z::Cipher $cipher .= new(:$filename);
+	my $grid = self.gen-grid(:$cipher);
+	self.set-content($grid);
 }
+method gen-grid (Z::Cipher :$cipher) {
+  my @pairs;
+	#$cipher.transpose;
+  
+	for ^$cipher.row-count X ^$cipher.col-count -> ($r, $c) {
+    my $pair =  [$c, $r, 1, 1] => $cipher.sym[$r][$c];
+		push @pairs, $pair;
+    
+	}
+	#say @pairs[0].value.label;
+	#say @pairs[1].value.label;
+	return GTK::Simple::Grid.new(@pairs);
+
+}
+
 

@@ -1,10 +1,12 @@
 #!/usr/bin/env perl6
 
-use GTK::Simple::Button;
 
 use lib <lib>;
-use Z::Cipher::Sym;
+use Z::Cipher::File;
 
-my $s = "abcdefgh";
+my $filename = 'cipher/z340'.IO;
 
-say $s.comb.map( -> $sym {Z::Cipher::Sym.new(label => "l") });
+my $cipher-file = Z::Cipher::File.new();
+
+$cipher-file.parse(:$filename);
+.say for $cipher-file.sym-grid;
