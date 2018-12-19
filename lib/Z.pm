@@ -1,6 +1,7 @@
 use GTK::Simple;
 use GTK::Simple::App;
 
+use Z::Enum;
 use Z::Cipher;
 use Z::Cipher::File;
 
@@ -8,10 +9,16 @@ unit class Z;
   also is GTK::Simple::App;
 
 method load-cipher (:$filename) {
-	my Z::Cipher $cipher .= new($filename);
-	$cipher .= transpose;
-	my $grid = self.gen-grid(:$cipher);
-	self.set-content($grid);
+	my Z::Cipher $cipher .= new(:$filename);
+
+	#$cipher .= transpose;
+	#$cipher .= flip(LEFT);
+	#$cipher .= rotate(RIGHT);
+	$cipher .= rotate(LEFT);
+
+$cipher.gist;
+	#my $grid = self.gen-grid(:$cipher);
+	#self.set-content($grid);
 }
 
 method gen-grid (Z::Cipher :$cipher) {
