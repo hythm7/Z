@@ -2,13 +2,13 @@
 
 use lib <lib>;
 use Z;
-use Z::Cipher;
+#use Z::Cipher;
 
 my $filename = "cipher/test".IO;
 my $z = Z.new();
-$z.load-cipher(:$filename);
 #$z.set-content($grid);
 
-#$z.run();
+#$z.border-width = 20;
 
+#$z.run();
 
