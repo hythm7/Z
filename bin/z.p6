@@ -4,7 +4,7 @@ use lib <lib>;
 use Z;
 #use Z::Cipher;
 
-my $filename = "cipher/test".IO;
+#my $filename = "cipher/test".IO;
 my $z = Z.new();
 #$z.set-content($grid);
 

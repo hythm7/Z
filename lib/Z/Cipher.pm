@@ -1,8 +1,14 @@
-use Z::Enum;
 use Z::Cipher::File;
 use Z::Cipher::Sym;
 
 unit class Z::Cipher;
+
+enum DIRECTIONS is export (
+  HORIZONTAL    => 'h',
+  VERTICAL      => 'v',
+  CLOCKWISE     => 'c',
+  ANTICLOCKWISE => 'a',
+);
 
 has Int $!sym-count;
 has Int $!row-count;
@@ -52,37 +58,25 @@ method transpose (Z::Cipher:D: --> Z::Cipher:D) {
 
 }
 
-multi method flip (Z::Cipher:D: LEFT --> Z::Cipher:D) {
+multi method flip (Z::Cipher:D: HORIZONTAL --> Z::Cipher:D) {
 	my @flipped;
   @flipped = @!sym.map( *.reverse );
 	Z::Cipher.new(:sym(@flipped));
 }
 
-multi method flip (Z::Cipher:D: RIGHT --> Z::Cipher:D) {
-	my @flipped;
-  @flipped = @!sym.map( *.reverse );
-	Z::Cipher.new(:sym(@flipped));
-}
-
-multi method flip (Z::Cipher:D: UP --> Z::Cipher:D) {
+multi method flip (Z::Cipher:D: VERTICAL --> Z::Cipher:D) {
 	my @flipped;
   @flipped = @!sym.reverse;
 	Z::Cipher.new(:sym(@flipped));
 }
 
-multi method flip (Z::Cipher:D: DOWN --> Z::Cipher:D) {
-	my @flipped;
-  @flipped = @!sym.reverse;
-	Z::Cipher.new(:sym(@flipped));
-}
-
-multi method rotate (Z::Cipher:D: LEFT --> Z::Cipher:D) {
-  my @rotated = self.transpose.flip(UP).sym;
+multi method rotate (Z::Cipher:D: CLOCKWISE --> Z::Cipher:D) {
+  my @rotated = self.transpose.flip(VERTICAL).sym;
 	Z::Cipher.new(:sym(@rotated));
 }
 
-multi method rotate (Z::Cipher:D: RIGHT --> Z::Cipher:D) {
-  my @rotated = self.transpose.flip(RIGHT).sym;
+multi method rotate (Z::Cipher:D: ANTICLOCKWISE --> Z::Cipher:D) {
+  my @rotated = self.transpose.flip(HORIZONTAL).sym;
 	Z::Cipher.new(:sym(@rotated));
 }
 

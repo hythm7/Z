@@ -7,39 +7,22 @@ use Z::Cipher;
 use Z::Cipher::File;
 
 unit class Z;
+  also does Z::Util;
   also is GTK::Simple::App;
 
 submethod BUILD () {
-  my $chooser;
 
-  $chooser = GTK::Simple::FileChooserButton.new();
-	$chooser.file-set.tap: { self.open-cipher(:filename($chooser.file-name.IO)) };
-
-  my $exit;
-	
-	$exit = GTK::Simple::Button.new(label => "Goodbye!");
-	$exit.clicked.tap: { self.exit; };
-
-
-  my $main-window =  GTK::Simple::VBox.new([
-	  { :widget($chooser), :expand(False) },
-	  { :widget($exit), :expand(False) },
-	]);
-
-  self.set-content($main-window);  
+  self.set-content(self.window(MAIN));  
+	self.show-all();
 	self.run;
 }
 
+multi method window ( MAIN ) {
+  self.content(MAIN);
+}
 
-method open-cipher (:$filename! ) {
+multi method window ( CIPHER, :$filename ) {
 	my GTK::Simple::Window $window      .= new: :title($filename.basename);
-	my Z::Cipher           $cipher      .= new: :$filename;
-	my GTK::Simple::Grid   $cipher-grid .= new: grid-pairs :$cipher;
-
-	$window.set-content($cipher-grid);
+  $window.set-content(self.content(CIPHER, :$filename));
 	$window.show();
-	#$cipher .= transpose;
-	#$cipher .= flip(LEFT);
-	#$cipher .= rotate(RIGHT);
-	#$cipher .= rotate(RIGHT);
 }
