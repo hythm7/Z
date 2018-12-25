@@ -23,7 +23,7 @@ multi method new (:@sym!) {
 multi method new (IO::Path :$filename!) {
 	my Z::Cipher::File $cipher-file .= new();
   my @sym = $cipher-file.parse(:$filename);
-	@sym .= deepmap( -> $label { Z::Cipher::Sym.new(:$label) });
+	@sym .= deepmap( -> $label { Z::Cipher::Sym.new_with_label($label) });
 
   self.bless( :@sym );
 }

@@ -1,6 +1,5 @@
-use GTK::Simple;
-use GTK::Simple::Raw;
-use GTK::Simple::App;
+use GTK::Application;
+use GTK::Raw::Types;
 
 use Z::Util;
 use Z::Cipher;
@@ -8,21 +7,24 @@ use Z::Cipher::File;
 
 unit class Z;
   also does Z::Util;
-  also is GTK::Simple::App;
+  also is GTK::Application;
 
 submethod BUILD () {
 
-  self.set-content(self.window(MAIN));  
-	self.show-all();
+	self.activate.tap({ 
+		CATCH { default { .message.say; self.exit } }
+    self.window.add(self.content(MAIN));  
+    self.window.destroy-signal.tap: { self.exit };
+	  self.show_all();
+  });
+
+
 	self.run;
 }
 
-multi method window ( MAIN ) {
-  self.content(MAIN);
-}
-
-multi method window ( CIPHER, :$filename ) {
-	my GTK::Simple::Window $window      .= new: :title($filename.basename);
-  $window.set-content(self.content(CIPHER, :$filename));
-	$window.show();
+multi method win ( CIPHER, :$filename ) {
+	my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
+	$window.add(self.content(CIPHER, :$filename));
+	$window.show_all();
+	self.add_window: $window;
 }

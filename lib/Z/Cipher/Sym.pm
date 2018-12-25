@@ -1,7 +1,7 @@
-use GTK::Simple::Button;
+use GTK::Button;
 
 unit class Z::Cipher::Sym;
-  also is GTK::Simple::Button;
+  also is GTK::Button;
 
 has Int $.w = 1;
 has Int $.h = 1;

@@ -1,5 +1,11 @@
-use GTK::Simple;
-use GTK::Simple::Raw;
+use GTK::Raw::Types;
+use GTK::Box;
+#use GTK::MenuBar;
+#use GTK::MenuItem;
+#use GTK::Menu;
+use GTK::Grid;
+use GTK::Button;
+use GTK::FileChooserButton;
 use Z::Cipher;
 use Z::Cipher::File;
 
@@ -11,53 +17,54 @@ enum WINDOW (
 unit role Z::Util;
 
 multi method content (MAIN) {
+	#	my GTK::MenuBar  $z-bar          .= new;
+	#my GTK::MenuItem $z-menu-item    .= new: :label<Z>;
+	#my GTK::MenuItem $quit-menu-item .= new: :label<Goodbye!>;
+	#my GTK::Menu     $z-menu         .= new;
 
-	my GTK::Simple::MenuBar  $z-bar          .= new;
-	my GTK::Simple::MenuItem $z-menu-item    .= new: :label<Z>;
-	my GTK::Simple::MenuItem $quit-menu-item .= new: :label<Goodbye!>;
-	my GTK::Simple::Menu     $z-menu         .= new;
+	#$z-menu-item.set-sub-menu($z-menu);
+	#$z-menu.append($quit-menu-item);
+	#$z-bar.append($z-menu-item);
+	#$quit-menu-item.activate.tap: { self.exit }
 
-	$z-menu-item.set-sub-menu($z-menu);
-	$z-menu.append($quit-menu-item);
-	$z-bar.append($z-menu-item);
-	$quit-menu-item.activate.tap: { self.exit }
+	my GTK::FileChooserButton $chooser .= new('Pick a cipher', GTK_FILE_CHOOSER_ACTION_OPEN);
+	my GTK::Button $exit .= new_with_label: <Goodbye!>;
 
-	my GTK::Simple::FileChooserButton $chooser .= new;
-	my GTK::Simple::Button            $exit    .= new: :label<Goodbye!>;
 
-	$chooser.file-set.tap: { self.window(CIPHER, :filename($chooser.file-name.IO)) };
+	$chooser.selection-changed.tap: { self.win(CIPHER, :filename($chooser.filename.IO)) };
 	$exit.clicked.tap:     { self.exit };
 
 
-  my $content =  GTK::Simple::VBox.new([
-	  { :widget($z-bar), :expand(False) },
-	  { :widget($chooser), :expand(False) },
-	  { :widget($exit), :expand(False) },
-	]);
+  my $box =  GTK::Box.new-vbox();
+ 	$box.pack_start($exit);
+	$box.pack_start($chooser);
 
-  $content;
+  $box;
 }
 
 
 multi method content (CIPHER, :$filename) {
 	my Z::Cipher  $cipher .= new: :$filename;
+	#say $cipher.sym[0][0];
 	$cipher .= flip(VERTICAL);
-	my GTK::Simple::Grid   $cipher-grid .= new: grid-pairs :$cipher;
+	my GTK::Grid   $cipher-grid .= new;
+	my @sym = gen-grid :$cipher;
+	$cipher-grid.attach: |$_ for @sym;
 
 	$cipher-grid;
 
 }
 
-multi grid-pairs (Z::Cipher :$cipher) {
-  my @pairs;
+multi gen-grid (Z::Cipher :$cipher) {
+  my @sym;
   
 	for ^$cipher.row-count X ^$cipher.col-count -> ($r, $c) {
 		my $sym = $cipher.sym[$r][$c];
-    my $pair =  [$c, $r, $sym.w, $sym.h] => $sym;
-
-		push @pairs, $pair;
+    my $item =  [$sym, $c, $r, $sym.w, $sym.h];
+		#say $sym.label;
+		push @sym, $item;
     
 	}
-	return @pairs;
+	return @sym;
 }
 

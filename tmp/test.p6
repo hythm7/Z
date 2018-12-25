@@ -1,21 +1,33 @@
-#!/usr/bin/env perl6
 
-use v6;
+use Test;
 
-use lib 'lib';
-use GTK::Simple::App;
-use GTK::Simple::Frame;
-use GTK::Simple::TextView;
-use GTK::Simple::VBox;
 
-my $app        = GTK::Simple::App.new(:title("Frame Demo"));
-my $text-view  = GTK::Simple::TextView.new(:text("Some Text"));
-my $frame      = GTK::Simple::Frame.new(:label("Some Label"));
+use GTK::Application;
+use GTK::Button;
+use GTK::Box;
 
-my $vbox           = GTK::Simple::VBox.new($text-view);
-$vbox.border-width = 20;
-$frame.set-content( $vbox );
-$app.set-content( $frame );
-$app.border-width = 20;
+my $a = GTK::Application.new(
+  title  => 'org.genex.test.widget',
+  width  => 400,
+  height => 400
+);
 
-$app.run;
+$a.activate.tap({
+  my $box = GTK::Box.new-vbox(6);
+  my ($b1, $b2, $b3) = (
+    GTK::Button.new_with_label('Click Me'),
+    GTK::Button.new_with_mnemonic('_Open'),
+    GTK::Button.new_with_mnemonic('_Close')
+  );
+
+  $a.window.add($box);
+  $b1.clicked.tap({ say 'Click me button was clicked'; });
+  $b2.clicked.tap({ say 'Open button was clicked'; });
+  $b3.clicked.tap({ say 'Closing application.'; $a.exit; });
+  $box.pack_start($b1, True, True, 0);
+  $box.pack_start($b2, True, True, 0);
+  $box.pack_start($b3, True, True, 0);
+  $a.show_all;
+});
+
+$a.run;
