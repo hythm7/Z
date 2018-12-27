@@ -36,8 +36,8 @@ multi method content (MAIN) {
 
 
   my $box =  GTK::Box.new-vbox();
- 	$box.pack_start($exit);
 	$box.pack_start($chooser);
+ 	$box.pack_start($exit);
 
   $box;
 }
@@ -45,8 +45,9 @@ multi method content (MAIN) {
 
 multi method content (CIPHER, :$filename) {
 	my Z::Cipher  $cipher .= new: :$filename;
-	#say $cipher.sym[0][0];
-	$cipher .= flip(VERTICAL);
+	#$cipher .= flip(VERTICAL);
+	#$cipher .= flip(HORIZONTAL);
+	$cipher .= rotate(ANTICLOCKWISE);
 	my GTK::Grid   $cipher-grid .= new;
 	my @sym = gen-grid :$cipher;
 	$cipher-grid.attach: |$_ for @sym;
@@ -56,12 +57,12 @@ multi method content (CIPHER, :$filename) {
 }
 
 multi gen-grid (Z::Cipher :$cipher) {
+	my $i = 0;
   my @sym;
   
 	for ^$cipher.row-count X ^$cipher.col-count -> ($r, $c) {
-		my $sym = $cipher.sym[$r][$c];
+		my $sym = $cipher.sym[$i++];
     my $item =  [$sym, $c, $r, $sym.w, $sym.h];
-		#say $sym.label;
 		push @sym, $item;
     
 	}

@@ -7,7 +7,8 @@ method parse (:$filename --> Array) {
   my $file = slurp $filename;
   return Nil unless [==] (.chars for $file.lines);
 
-  @sym.push: .comb for $file.lines;
+  @sym.append: .comb for $file.lines;
+	say @sym;
 	return @sym;
 
 }

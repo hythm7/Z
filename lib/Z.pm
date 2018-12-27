@@ -1,5 +1,6 @@
-use GTK::Application;
 use GTK::Raw::Types;
+use GTK::Application;
+use GTK::CSSProvider;
 
 use Z::Util;
 use Z::Cipher;
@@ -10,6 +11,7 @@ unit class Z;
   also is GTK::Application;
 
 submethod BUILD () {
+	GTK::CSSProvider.new.load-from-path('css/style.css');
 
 	self.activate.tap({ 
 		CATCH { default { .message.say; self.exit } }
