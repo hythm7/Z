@@ -67,7 +67,7 @@ submethod BUILD (
 	@!quintgram = self.gram(QUINT);
 
 
-	$*statusbar.push: $*statusbar.get-context-id(self), self.status;
+	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
 
 method gist (Z::Cipher:D:) { 
