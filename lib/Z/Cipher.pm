@@ -9,9 +9,23 @@ enum DIRECTIONS is export (
   ANTICLOCKWISE => 'a',
 );
 
+enum GRAM (
+  UNI   => 1,
+	BI    => 2,
+	TRI   => 3,
+	QUAD  => 4,
+	QUINT => 5,
+);
+
+
 has Int $!sym-count;
 has Int $!row-count;
 has Int $!col-count;
+has     @!unigram;
+has     @!bigram;
+has     @!trigram;
+has     @!quadgram;
+has     @!quintgram;
 
 has @.sym is required;
 
@@ -45,8 +59,15 @@ submethod BUILD (
 	$!sym-count = @sym.elems; 
 	$!row-count = $row-count; 
 	$!col-count = $col-count; 
-	@!sym = @sym;
-	self.gist;
+	@!sym       = @sym;
+	@!unigram   = self.gram(UNI);
+	@!bigram    = self.gram(BI);
+	@!trigram   = self.gram(TRI);
+	@!quadgram  = self.gram(QUAD);
+	@!quintgram = self.gram(QUINT);
+
+
+	$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
 
 method gist (Z::Cipher:D:) { 
@@ -92,4 +113,34 @@ multi method rotate (Z::Cipher:D: ANTICLOCKWISE --> Z::Cipher:D) {
   my @rotated = self.transpose.flip(VERTICAL).sym;
 	Z::Cipher.new(:sym(@rotated), row-count => $!col-count, col-count => $!row-count);
 }
+
+multi method gram (Z::Cipher:D: UNI $g) {
+	my $b =  0;                 # back step
+  my $bag = @!sym>>.label.rotor($g => $b).map(*.join).Bag;
+
+	my @gram = gather for $bag.pairs {
+		.take;
+	}
+
+  @gram;
+
+}
+
+multi method gram (Z::Cipher:D: GRAM $g) {
+	my $b = $g - ($g + $g - 1);                 # back step
+  my $bag = @!sym>>.label.rotor($g => $b).map(*.join).Bag;
+
+	#.say for $bag.pairs;
+	my @gram = gather for $bag.pairs {
+		.take if .value > 1;
+	}
+
+  @gram;
+
+}
+
+method status () {
+  "U:" ~ @!unigram.elems ~ " B:" ~ @!bigram.elems ~ " T:" ~ @!trigram.elems;
+}
+
 

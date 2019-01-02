@@ -1,5 +1,6 @@
 use GTK::Raw::Types;
 use GTK::Box;
+use GTK::Statusbar;
 #use GTK::MenuBar;
 #use GTK::MenuItem;
 #use GTK::Menu;
@@ -44,15 +45,22 @@ multi method content (MAIN) {
 
 
 multi method content (CIPHER, :$filename) {
+	my $*statusbar = GTK::Statusbar.new;
+
+  my $box =  GTK::Box.new-vbox();
 	my Z::Cipher  $cipher .= new: :$filename;
 	#$cipher .= flip(VERTICAL);
 	#$cipher .= flip(HORIZONTAL);
-	$cipher .= rotate(ANTICLOCKWISE);
+	#$cipher .= rotate(ANTICLOCKWISE);
 	my GTK::Grid   $cipher-grid .= new;
 	my @sym = gen-grid :$cipher;
 	$cipher-grid.attach: |$_ for @sym;
 
-	$cipher-grid;
+
+	$box.pack_start($cipher-grid);
+	$box.pack_start($*statusbar);
+
+	$box;
 
 }
 
