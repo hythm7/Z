@@ -2,6 +2,11 @@ use Z::Cipher::Sym;
 
 unit class Z::Cipher;
 
+enum COMMANDS is export (
+  HFLIP    => 102,
+  VFLIP    => 70,
+);
+
 enum DIRECTIONS is export (
   HORIZONTAL    => 'h',
   VERTICAL      => 'v',

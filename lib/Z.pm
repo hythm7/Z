@@ -43,15 +43,45 @@ submethod BUILD () {
 }
 
 multi method win ( CIPHER, :$filename ) {
+  my Z::Cipher  $cipher .= new: :$filename;
   my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
   my $*statusbar = GTK::Statusbar.new;
-  my Z::Cipher  $cipher .= new: :$filename;
+  my $box =  GTK::Box.new-vbox();
+  #$cipher .= flip(VERTICAL);
+  #$cipher .= flip(HORIZONTAL);
+  #$cipher .= rotate(ANTICLOCKWISE);
+  my GTK::Grid   $grid .= new;
+  my @sym = gen-grid :$cipher;
+  say @sym[0][0];
+  $grid.attach: |$_ for @sym;
 
-  my $box = self.content(CIPHER, :$cipher);
+
+  $box.pack_start($grid);
+  $box.pack_start($*statusbar);
+
+
+
   $window.add($box);
   $window.add-events: GDK_KEY_PRESS_MASK;
   $window.key-press-event.tap( -> ($win, $event, $data, $value) {
-    $value.r = key-pressed(:$win, :$event);
+    my $key = cast(GdkEventKey, $event);
+    given $key.keyval {
+        when HFLIP {
+          #$cipher .= flip(HORIZONTAL);
+          my @sym = gen-grid :$cipher;
+          
+  my $h = Z::Cipher::Sym.new_with_label('H');
+  my $s = @sym[0][0];
+  say $h.label;
+          $grid.attach: |($h, 0, 6, 1, 1);
+          $grid.show_all();
+          #$box.pack_start($grid);
+        }
+        when VFLIP { .say };
+
+      }
+      
+    $value.r = 0;
   });
   $window.show_all();
   self.add_window: $window;
@@ -86,24 +116,6 @@ multi method content (MAIN) {
 
 
 
-multi method content (CIPHER, :$cipher) {
-
-  my $box =  GTK::Box.new-vbox();
-  #$cipher .= flip(VERTICAL);
-  #$cipher .= flip(HORIZONTAL);
-  #$cipher .= rotate(ANTICLOCKWISE);
-  my GTK::Grid   $cipher-grid .= new;
-  my @sym = gen-grid :$cipher;
-  $cipher-grid.attach: |$_ for @sym;
-
-
-  $box.pack_start($cipher-grid);
-  $box.pack_start($*statusbar);
-
-  $box;
-
-}
-
 
 sub gen-grid (Z::Cipher :$cipher) {
   my $i = 0;
@@ -118,9 +130,3 @@ sub gen-grid (Z::Cipher :$cipher) {
   return @sym;
 }
 
-sub key-pressed ( :$win!, :$event ) is export {
-  my $key = cast(GdkEventKey, $event);
-  say $win.get_children>>.get_children;
-  return True;
-  #$win .= flip(HORIZONTAL) if  $key.string ~~ 'f';
-}
