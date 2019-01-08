@@ -51,8 +51,9 @@ multi method win ( CIPHER, :$filename ) {
   #$cipher .= flip(HORIZONTAL);
   #$cipher .= rotate(ANTICLOCKWISE);
   my GTK::Grid   $grid .= new;
-  my @sym = gen-grid :$cipher;
-  say @sym[0][0];
+  $grid.row-homogeneous;
+  $grid.column-homogeneous;
+  my @sym = gen-grid-childs :$cipher;
   $grid.attach: |$_ for @sym;
 
 
@@ -67,17 +68,28 @@ multi method win ( CIPHER, :$filename ) {
     my $key = cast(GdkEventKey, $event);
     given $key.keyval {
         when HFLIP {
-          #$cipher .= flip(HORIZONTAL);
-          my @sym = gen-grid :$cipher;
-          
-  my $h = Z::Cipher::Sym.new_with_label('H');
-  my $s = @sym[0][0];
-  say $h.label;
-          $grid.attach: |($h, 0, 6, 1, 1);
-          $grid.show_all();
-          #$box.pack_start($grid);
+          $cipher .= flip(HORIZONTAL);
+          arrange-grid-childs :$grid, :$cipher;
         }
-        when VFLIP { .say };
+        when VFLIP {
+          $cipher .= flip(VERTICAL);
+          arrange-grid-childs :$grid, :$cipher;
+        }
+
+        when CROTATE {
+          $cipher .= rotate(CLOCKWISE);
+          arrange-grid-childs :$grid, :$cipher;
+        }
+
+        when AROTATE {
+          $cipher .= rotate(ANTICLOCKWISE);
+          arrange-grid-childs :$grid, :$cipher;
+        }
+
+        when TRANSPOSE {
+          $cipher .= transpose;
+          arrange-grid-childs :$grid, :$cipher;
+        }
 
       }
       
@@ -117,16 +129,26 @@ multi method content (MAIN) {
 
 
 
-sub gen-grid (Z::Cipher :$cipher) {
+sub gen-grid-childs (Z::Cipher :$cipher) {
   my $i = 0;
   my @sym;
 
   for ^$cipher.row-count X ^$cipher.col-count -> ($r, $c) {
     my $sym = $cipher.sym[$i++];
-    my $item =  [$sym, $c, $r, $sym.w, $sym.h];
+    my $item =  [$sym, $c, $r, 1, 1];
     push @sym, $item;
 
   }
   return @sym;
+}
+
+sub arrange-grid-childs (:$grid, Z::Cipher :$cipher) {
+  my $i = 0;
+  for ^$cipher.row-count X ^$cipher.col-count -> ($r, $c) {
+    my $sym = $cipher.sym[$i];
+    $grid.child-set-int($cipher.sym[$i], 'left_attach', $c);
+    $grid.child-set-int($cipher.sym[$i], 'top_attach', $r);
+    $i += 1;
+  }
 }
 

@@ -3,8 +3,13 @@ use Z::Cipher::Sym;
 unit class Z::Cipher;
 
 enum COMMANDS is export (
-  HFLIP    => 102,
-  VFLIP    => 70,
+  VFLIP => 70,
+  HFLIP => 102,
+  
+  AROTATE => 82,
+  CROTATE => 114,
+  
+  TRANSPOSE => 116,
 );
 
 enum DIRECTIONS is export (
