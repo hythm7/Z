@@ -51,8 +51,12 @@ multi method win ( CIPHER, :$filename ) {
   #$cipher .= flip(HORIZONTAL);
   #$cipher .= rotate(ANTICLOCKWISE);
   my GTK::Grid   $grid .= new;
-  $grid.row-homogeneous;
-  $grid.column-homogeneous;
+  $grid.halign = GTK_ALIGN_START;
+  $grid.valign = GTK_ALIGN_START;
+  $grid.row-homogeneous = True;
+  $grid.column-homogeneous = True;
+  #$grid.row-spacing = 7;
+  #$grid.column-spacing = 7;
   my @sym = gen-grid-childs :$cipher;
   $grid.attach: |$_ for @sym;
 
@@ -70,6 +74,7 @@ multi method win ( CIPHER, :$filename ) {
         when HFLIP {
           $cipher .= flip(HORIZONTAL);
           arrange-grid-childs :$grid, :$cipher;
+          say 1;
         }
         when VFLIP {
           $cipher .= flip(VERTICAL);
@@ -95,6 +100,7 @@ multi method win ( CIPHER, :$filename ) {
       
     $value.r = 0;
   });
+  
   $window.show_all();
   self.add_window: $window;
 }
@@ -119,7 +125,7 @@ multi method content (MAIN) {
   $exit.clicked.tap:     { self.exit };
 
 
-  my $box =  GTK::Box.new-vbox();
+  my $box = GTK::Box.new-vbox();
   $box.pack_start($chooser);
   $box.pack_start($exit);
 
@@ -130,12 +136,11 @@ multi method content (MAIN) {
 
 
 sub gen-grid-childs (Z::Cipher :$cipher) {
-  my $i = 0;
   my @sym;
 
   for ^$cipher.row-count X ^$cipher.col-count -> ($r, $c) {
-    my $sym = $cipher.sym[$i++];
-    my $item =  [$sym, $c, $r, 1, 1];
+    my $sym = $cipher.sym[$++];
+    my $item =  ($sym, $c, $r, 1, 1);
     push @sym, $item;
 
   }
@@ -143,12 +148,9 @@ sub gen-grid-childs (Z::Cipher :$cipher) {
 }
 
 sub arrange-grid-childs (:$grid, Z::Cipher :$cipher) {
-  my $i = 0;
   for ^$cipher.row-count X ^$cipher.col-count -> ($r, $c) {
-    my $sym = $cipher.sym[$i];
-    $grid.child-set-int($cipher.sym[$i], 'left_attach', $c);
-    $grid.child-set-int($cipher.sym[$i], 'top_attach', $r);
-    $i += 1;
+    $grid.child-set-int($cipher.sym[$++], 'top_attach',  $r);
+    $grid.child-set-int($cipher.sym[$++], 'left_attach', $c);
   }
 }
 
