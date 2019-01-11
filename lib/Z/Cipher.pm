@@ -1,8 +1,11 @@
+use GTK::Raw::Types;
+use GTK::Grid;
 use Z::Cipher::Sym;
 
 unit class Z::Cipher;
+  also is GTK::Grid;
 
-enum COMMANDS is export (
+enum COMMAND is export (
   VFLIP => 70,
   HFLIP => 102,
   
@@ -12,7 +15,7 @@ enum COMMANDS is export (
   TRANSPOSE => 116,
 );
 
-enum DIRECTIONS is export (
+enum DIRECTION is export (
   HORIZONTAL    => 'h',
   VERTICAL      => 'v',
   CLOCKWISE     => 'c',
@@ -37,26 +40,23 @@ has     @!trigram;
 has     @!quadgram;
 has     @!quintgram;
 
-has @.sym is required;
+has @!sym;
 
-multi method new (:@sym!, :$row-count!, :$col-count!) {
-  self.bless( :@sym, :$row-count, :$col-count );
-}
+#multi method new (:@sym!, :$row-count!, :$col-count!) {
+#  self.bless( :@sym, :$row-count, :$col-count );
+#}
 
-multi method new (IO::Path :$filename!) {
+#hack untill GTK Inheritance fixed;
+method new (IO::Path :$filename!) {
+  my $grid = GTK::Grid.new;
 	my $file = slurp $filename;
 	return Nil unless [==] (.chars for $file.lines);
 
 	my $row-count = $file.lines.elems;
 	my $col-count = $file.lines[0].chars;
-	#my $sym-count = $file.chars - $row-count;
-	#my $col-count = $sym-count / $row-count;
 
   my @sym = $file.comb: /\N/;
-
-	@sym .= map( -> $label { Z::Cipher::Sym.new_with_label($label) });
-
-  self.bless( :@sym, :$row-count, :$col-count );
+  self.bless(:@sym, :$row-count, :$col-count);
 }
 
 submethod BUILD (
@@ -66,16 +66,25 @@ submethod BUILD (
 ) {
 
 
+	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new_with_label($label) });
 	$!sym-count = @sym.elems; 
 	$!row-count = $row-count; 
 	$!col-count = $col-count; 
-	@!sym       = @sym;
+  
 	@!unigram   = self.gram(UNI);
 	@!bigram    = self.gram(BI);
 	@!trigram   = self.gram(TRI);
 	@!quadgram  = self.gram(QUAD);
 	@!quintgram = self.gram(QUINT);
+  
+  #self.halign = GTK_ALIGN_START;
+  #self.valign = GTK_ALIGN_START;
+  #self.row-homogeneous = True;
+  #self.column-homogeneous = True;
 
+  #for ^$!row-count X ^$!col-count -> ($r, $c) {
+    #  self.attach: @!sym[$++], $c, $r, 1, 1;
+    #}
 
 	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
@@ -88,7 +97,7 @@ method sym-count () { $!sym-count }
 method row-count () { $!row-count }
 method col-count () { $!col-count }
 
-method transpose (Z::Cipher:D: --> Z::Cipher:D) {
+method transpose () {
   my @transposed;
   my @rotored = @!sym.rotor($!col-count);
 
@@ -97,31 +106,27 @@ method transpose (Z::Cipher:D: --> Z::Cipher:D) {
 	}
 	
 	@transposed = gather @transposed.deepmap: *.take;
-
-	Z::Cipher.new(:sym(@transposed), row-count => $!col-count, col-count => $!row-count);
-
+  
+  ($!row-count, $!col-count) .= reverse;
+  @!sym = @transposed;
 }
 
-multi method flip (Z::Cipher:D: HORIZONTAL --> Z::Cipher:D) {
-	my @flipped;
-  @flipped = @!sym.rotor($!col-count).map(*.reverse).flat;
-	Z::Cipher.new(:sym(@flipped), :$!row-count, :$!col-count);
+multi method flip (HORIZONTAL) {
+  @!sym .= rotor($!col-count).map(*.reverse).flat;
 }
 
-multi method flip (Z::Cipher:D: VERTICAL --> Z::Cipher:D) {
-	my @flipped;
-  @flipped = @!sym.rotor($!col-count).reverse.flat;
-	Z::Cipher.new(:sym(@flipped), :$!row-count, :$!col-count);
+multi method flip (VERTICAL) {
+  @!sym .= rotor($!col-count).reverse.flat;
 }
 
-multi method rotate (Z::Cipher:D: CLOCKWISE --> Z::Cipher:D) {
-  my @rotated = self.transpose.flip(HORIZONTAL).sym;
-	Z::Cipher.new(:sym(@rotated), row-count => $!col-count, col-count => $!row-count);
+multi method rotate (CLOCKWISE) {
+  self.transpose;
+  self.flip(HORIZONTAL);
 }
 
-multi method rotate (Z::Cipher:D: ANTICLOCKWISE --> Z::Cipher:D) {
-  my @rotated = self.transpose.flip(VERTICAL).sym;
-	Z::Cipher.new(:sym(@rotated), row-count => $!col-count, col-count => $!row-count);
+multi method rotate (ANTICLOCKWISE) {
+  self.transpose;
+  self.flip(VERTICAL);
 }
 
 multi method gram (Z::Cipher:D: UNI $g) {
@@ -149,8 +154,46 @@ multi method gram (Z::Cipher:D: GRAM $g) {
 
 }
 
+method update-grid () {
+  for ^$!row-count X ^$!col-count -> ($r, $c) {
+    self.child-set-int(@!sym[$++], 'top_attach',  $r);
+    self.child-set-int(@!sym[$++], 'left_attach', $c);
+  }
+}
+
 method status () {
   "U:" ~ @!unigram.elems ~ " B:" ~ @!bigram.elems ~ " T:" ~ @!trigram.elems;
 }
 
+method cmd (COMMAND :$cmd) {
+  given $cmd {
+    when HFLIP {
+      self.flip(HORIZONTAL);
+      self.update-grid;
+      True;
+    }
+    when VFLIP {
+      self.flip(VERTICAL);
+      self.update-grid;
+      True;
+    }
 
+    when CROTATE {
+      self.cipher.rotate(CLOCKWISE);
+      self.update-grid;
+      True;
+    }
+
+    when AROTATE {
+      self.cipher.rotate(ANTICLOCKWISE);
+      self.update-grid;
+      True;
+    }
+
+    when TRANSPOSE {
+      self.cipher.transpose;
+      self.update-grid;
+      True;
+    }
+  }
+}
