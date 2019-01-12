@@ -48,15 +48,17 @@ has @!sym;
 
 #hack untill GTK Inheritance fixed;
 method new (IO::Path :$filename!) {
-  my $grid = GTK::Grid.new;
-	my $file = slurp $filename;
-	return Nil unless [==] (.chars for $file.lines);
+	my $o = nextwith;
 
-	my $row-count = $file.lines.elems;
-	my $col-count = $file.lines[0].chars;
+	#my $file = slurp $filename;
+	#return Nil unless [==] (.chars for $file.lines);
 
-  my @sym = $file.comb: /\N/;
-  self.bless(:@sym, :$row-count, :$col-count);
+	#my $row-count = $file.lines.elems;
+	#my $col-count = $file.lines[0].chars;
+
+	#my @sym = $file.comb: /\N/;
+	#$o.bless(:@sym, :$row-count, :$col-count);
+	$o;
 }
 
 submethod BUILD (
