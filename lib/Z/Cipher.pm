@@ -3,15 +3,16 @@ use GTK::Grid;
 use Z::Cipher::Sym;
 
 unit class Z::Cipher;
-  also is GTK::Grid;
+
+  has GTK::Grid $!grid;
 
 enum COMMAND is export (
   VFLIP => 70,
   HFLIP => 102,
-  
+
   AROTATE => 82,
   CROTATE => 114,
-  
+
   TRANSPOSE => 116,
 );
 
@@ -48,17 +49,14 @@ has @!sym;
 
 #hack untill GTK Inheritance fixed;
 method new (IO::Path :$filename!) {
-	my $o = nextwith;
+	my $file = slurp $filename;
+	return Nil unless [==] (.chars for $file.lines);
 
-	#my $file = slurp $filename;
-	#return Nil unless [==] (.chars for $file.lines);
+	my $row-count = $file.lines.elems;
+	my $col-count = $file.lines[0].chars;
 
-	#my $row-count = $file.lines.elems;
-	#my $col-count = $file.lines[0].chars;
-
-	#my @sym = $file.comb: /\N/;
-	#$o.bless(:@sym, :$row-count, :$col-count);
-	$o;
+	my @sym = $file.comb: /\N/;
+	self.bless(:@sym, :$row-count, :$col-count);
 }
 
 submethod BUILD (
@@ -66,32 +64,31 @@ submethod BUILD (
   :$row-count!,
   :$col-count!,
 ) {
-
-
+  $!grid = GTK::Grid.new;
 	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new_with_label($label) });
-	$!sym-count = @sym.elems; 
-	$!row-count = $row-count; 
-	$!col-count = $col-count; 
-  
+	$!sym-count = @sym.elems;
+	$!row-count = $row-count;
+	$!col-count = $col-count;
+
 	@!unigram   = self.gram(UNI);
 	@!bigram    = self.gram(BI);
 	@!trigram   = self.gram(TRI);
 	@!quadgram  = self.gram(QUAD);
 	@!quintgram = self.gram(QUINT);
-  
-  #self.halign = GTK_ALIGN_START;
-  #self.valign = GTK_ALIGN_START;
-  #self.row-homogeneous = True;
-  #self.column-homogeneous = True;
 
-  #for ^$!row-count X ^$!col-count -> ($r, $c) {
-    #  self.attach: @!sym[$++], $c, $r, 1, 1;
-    #}
+  $!grid.halign = GTK_ALIGN_START;
+  $!grid.valign = GTK_ALIGN_START;
+  $!grid.row-homogeneous = True;
+  $!grid.column-homogeneous = True;
+
+  for ^$!row-count X ^$!col-count -> ($r, $c) {
+    $!grid.attach: @!sym[$++], $c, $r, 1, 1;
+  }
 
 	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
 
-method gist (Z::Cipher:D:) { 
+method gist (Z::Cipher:D:) {
 		put .map(*.label) for @!sym.rotor($!col-count);
 }
 
@@ -106,9 +103,9 @@ method transpose () {
 	for ^$!row-count X ^$!col-count -> ($r, $c) {
     @transposed[$c][$r] = @rotored[$r][$c];
 	}
-	
+
 	@transposed = gather @transposed.deepmap: *.take;
-  
+
   ($!row-count, $!col-count) .= reverse;
   @!sym = @transposed;
 }
@@ -158,8 +155,8 @@ multi method gram (Z::Cipher:D: GRAM $g) {
 
 method update-grid () {
   for ^$!row-count X ^$!col-count -> ($r, $c) {
-    self.child-set-int(@!sym[$++], 'top_attach',  $r);
-    self.child-set-int(@!sym[$++], 'left_attach', $c);
+    $!grid.child-set-int(@!sym[$++], 'top_attach',  $r);
+    $!grid.child-set-int(@!sym[$++], 'left_attach', $c);
   }
 }
 
