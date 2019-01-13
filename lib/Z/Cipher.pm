@@ -1,4 +1,5 @@
 use GTK::Raw::Types;
+use GTK::Compat::Types;
 use GTK::Grid;
 use Z::Cipher::Sym;
 
@@ -64,7 +65,6 @@ submethod BUILD (
   :$row-count!,
   :$col-count!,
 ) {
-  $!grid = GTK::Grid.new;
 	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new_with_label($label) });
 	$!sym-count = @sym.elems;
 	$!row-count = $row-count;
@@ -76,6 +76,7 @@ submethod BUILD (
 	@!quadgram  = self.gram(QUAD);
 	@!quintgram = self.gram(QUINT);
 
+  $!grid = GTK::Grid.new;
   $!grid.halign = GTK_ALIGN_START;
   $!grid.valign = GTK_ALIGN_START;
   $!grid.row-homogeneous = True;
@@ -84,6 +85,14 @@ submethod BUILD (
   for ^$!row-count X ^$!col-count -> ($r, $c) {
     $!grid.attach: @!sym[$++], $c, $r, 1, 1;
   }
+
+	$!grid.add-events: GDK_KEY_PRESS_MASK;
+  
+  $!grid.key-press-event.tap( -> *@a {
+    my $cmd = cast(GdkEventKey, @a[1]).keyval;
+    @a[*-1].r = self.cmd(:$cmd);
+  });
+
 
 	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
@@ -95,6 +104,7 @@ method gist (Z::Cipher:D:) {
 method sym-count () { $!sym-count }
 method row-count () { $!row-count }
 method col-count () { $!col-count }
+method grid      () { $!grid }
 
 method transpose () {
   my @transposed;
@@ -111,11 +121,13 @@ method transpose () {
 }
 
 multi method flip (HORIZONTAL) {
-  @!sym .= rotor($!col-count).map(*.reverse).flat;
+	my @flipped = @!sym.rotor($!col-count).map(*.reverse).flat;
+  @!sym = @flipped;
 }
 
 multi method flip (VERTICAL) {
-  @!sym .= rotor($!col-count).reverse.flat;
+  my @flipped  = @!sym.rotor($!col-count).reverse.flat;
+  @!sym = @flipped;
 }
 
 multi method rotate (CLOCKWISE) {
@@ -164,7 +176,7 @@ method status () {
   "U:" ~ @!unigram.elems ~ " B:" ~ @!bigram.elems ~ " T:" ~ @!trigram.elems;
 }
 
-method cmd (COMMAND :$cmd) {
+method cmd (:$cmd) {
   given $cmd {
     when HFLIP {
       self.flip(HORIZONTAL);
@@ -178,19 +190,19 @@ method cmd (COMMAND :$cmd) {
     }
 
     when CROTATE {
-      self.cipher.rotate(CLOCKWISE);
+      self.rotate(CLOCKWISE);
       self.update-grid;
       True;
     }
 
     when AROTATE {
-      self.cipher.rotate(ANTICLOCKWISE);
+      self.rotate(ANTICLOCKWISE);
       self.update-grid;
       True;
     }
 
     when TRANSPOSE {
-      self.cipher.transpose;
+      self.transpose;
       self.update-grid;
       True;
     }

@@ -43,24 +43,17 @@ submethod BUILD () {
 }
 
 multi method win ( CIPHER, :$filename ) {
-  my Z::Cipher  $cipher .= new: :$filename;
+	my $grid = Z::Cipher.new(:$filename).grid;
+	#my Z::Cipher  $cipher .= new: :$filename;
   my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
   my $*statusbar = GTK::Statusbar.new;
   my $box =  GTK::Box.new-vbox();
   
-  #$box.pack_start($cipher);
+  $box.pack_start($grid);
   #$box.pack_start($*statusbar);
 
   $window.add($box);
   
-  #$cipher.add-events: GDK_KEY_PRESS_MASK;
-  
-  #$cipher.key-press-event.tap( -> *@a {
-    #  my $cmd = cast(GdkEventKey, @a[1]).keyval;
-    #@a[*-1] = $cipher.cmd(:$cmd);
-    # });
-  
- 
   $window.show_all();
   self.add_window: $window;
 }
