@@ -4,13 +4,19 @@ use GTK::Grid;
 use Z::Cipher::Sym;
 
 enum COMMAND is export (
-  VFLIP => 70,
-  HFLIP => 102,
+  VFLIP      => 70,
+  HFLIP      => 102,
 
-  AROTATE => 82,
-  CROTATE => 114,
+  AROTATE    => 82,
+  CROTATE    => 114,
 
-  TRANSPOSE => 116,
+  TRANSPOSE  => 116,
+
+  UNIGRAMS   => 49,
+	BIGRAMS    => 50,
+	TRIGRAMS   => 51,
+	QUADGRAMS  => 52,
+	QUINTGRAMS => 53,
 );
 
 enum GRAM (
@@ -155,11 +161,18 @@ method create-grid () {
     my $cmd = cast(GdkEventKey, @a[1]).keyval;
 
 		given $cmd {
-      @a[*-1].r = self.cmd(HFLIP)     when HFLIP;
-      @a[*-1].r = self.cmd(VFLIP)     when VFLIP;
-      @a[*-1].r = self.cmd(CROTATE)   when CROTATE;
-      @a[*-1].r = self.cmd(AROTATE)   when AROTATE;
-      @a[*-1].r = self.cmd(TRANSPOSE) when TRANSPOSE;
+      @a[*-1].r = self.cmd(HFLIP)      when HFLIP;
+      @a[*-1].r = self.cmd(VFLIP)      when VFLIP;
+      @a[*-1].r = self.cmd(CROTATE)    when CROTATE;
+      @a[*-1].r = self.cmd(AROTATE)    when AROTATE;
+      @a[*-1].r = self.cmd(TRANSPOSE)  when TRANSPOSE;
+
+      @a[*-1].r = self.cmd(UNIGRAMS)   when UNIGRAMS;
+      @a[*-1].r = self.cmd(BIGRAMS)    when BIGRAMS;
+      @a[*-1].r = self.cmd(TRIGRAMS)   when TRIGRAMS;
+      @a[*-1].r = self.cmd(QUADGRAMS)  when QUADGRAMS;
+      @a[*-1].r = self.cmd(QUINTGRAMS) when QUINTGRAMS;
+
 			default { @a[*-1].r = 0 };
 		}
 
@@ -202,5 +215,25 @@ multi method cmd (AROTATE) {
 multi method cmd (TRANSPOSE) {
   self.transpose();
   self.update-grid;
+  True;
+}
+multi method cmd (UNIGRAMS) {
+  say self.gram(UNI).elems;
+  True;
+}
+multi method cmd (BIGRAMS) {
+  say self.gram(BI).elems;
+  True;
+}
+multi method cmd (TRIGRAMS) {
+  say self.gram(TRI).elems;
+  True;
+}
+multi method cmd (QUADGRAMS) {
+  say self.gram(QUAD).elems;
+  True;
+}
+multi method cmd (QUINTGRAMS) {
+  say self.gram(QUINT).elems;
   True;
 }
