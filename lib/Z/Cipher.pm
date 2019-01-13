@@ -3,10 +3,6 @@ use GTK::Compat::Types;
 use GTK::Grid;
 use Z::Cipher::Sym;
 
-unit class Z::Cipher;
-
-  has GTK::Grid $!grid;
-
 enum COMMAND is export (
   VFLIP => 70,
   HFLIP => 102,
@@ -17,13 +13,6 @@ enum COMMAND is export (
   TRANSPOSE => 116,
 );
 
-enum DIRECTION is export (
-  HORIZONTAL    => 'h',
-  VERTICAL      => 'v',
-  CLOCKWISE     => 'c',
-  ANTICLOCKWISE => 'a',
-);
-
 enum GRAM (
   UNI   => 1,
 	BI    => 2,
@@ -32,6 +21,8 @@ enum GRAM (
 	QUINT => 5,
 );
 
+
+unit class Z::Cipher;
 
 has Int $!sym-count;
 has Int $!row-count;
@@ -44,11 +35,9 @@ has     @!quintgram;
 
 has @!sym;
 
-#multi method new (:@sym!, :$row-count!, :$col-count!) {
-#  self.bless( :@sym, :$row-count, :$col-count );
-#}
+has GTK::Grid $!grid;
 
-#hack untill GTK Inheritance fixed;
+
 method new (IO::Path :$filename!) {
 	my $file = slurp $filename;
 	return Nil unless [==] (.chars for $file.lines);
@@ -76,24 +65,7 @@ submethod BUILD (
 	@!quadgram  = self.gram(QUAD);
 	@!quintgram = self.gram(QUINT);
 
-  $!grid = GTK::Grid.new;
-  $!grid.halign = GTK_ALIGN_START;
-  $!grid.valign = GTK_ALIGN_START;
-  $!grid.row-homogeneous = True;
-  $!grid.column-homogeneous = True;
-
-  for ^$!row-count X ^$!col-count -> ($r, $c) {
-    $!grid.attach: @!sym[$++], $c, $r, 1, 1;
-  }
-
-	$!grid.add-events: GDK_KEY_PRESS_MASK;
-  
-  $!grid.key-press-event.tap( -> *@a {
-    my $cmd = cast(GdkEventKey, @a[1]).keyval;
-    @a[*-1].r = self.cmd(:$cmd);
-  });
-
-
+	self.create-grid();
 	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
 
@@ -120,24 +92,24 @@ method transpose () {
   @!sym = @transposed;
 }
 
-multi method flip (HORIZONTAL) {
+multi method hflip () {
 	my @flipped = @!sym.rotor($!col-count).map(*.reverse).flat;
   @!sym = @flipped;
 }
 
-multi method flip (VERTICAL) {
+multi method vflip () {
   my @flipped  = @!sym.rotor($!col-count).reverse.flat;
   @!sym = @flipped;
 }
 
-multi method rotate (CLOCKWISE) {
-  self.transpose;
-  self.flip(HORIZONTAL);
+multi method crotate () {
+  self.transpose();
+  self.hflip();
 }
 
-multi method rotate (ANTICLOCKWISE) {
-  self.transpose;
-  self.flip(VERTICAL);
+multi method arotate () {
+  self.transpose();
+  self.vflip();
 }
 
 multi method gram (Z::Cipher:D: UNI $g) {
@@ -165,6 +137,35 @@ multi method gram (Z::Cipher:D: GRAM $g) {
 
 }
 
+method create-grid () {
+
+  $!grid = GTK::Grid.new;
+  $!grid.halign = GTK_ALIGN_START;
+  $!grid.valign = GTK_ALIGN_START;
+  $!grid.row-homogeneous = True;
+  $!grid.column-homogeneous = True;
+
+  for ^$!row-count X ^$!col-count -> ($r, $c) {
+    $!grid.attach: @!sym[$++], $c, $r, 1, 1;
+  }
+
+	$!grid.add-events: GDK_KEY_PRESS_MASK;
+  
+  $!grid.key-press-event.tap( -> *@a {
+    my $cmd = cast(GdkEventKey, @a[1]).keyval;
+
+		given $cmd {
+      @a[*-1].r = self.cmd(HFLIP)     when HFLIP;
+      @a[*-1].r = self.cmd(VFLIP)     when VFLIP;
+      @a[*-1].r = self.cmd(CROTATE)   when CROTATE;
+      @a[*-1].r = self.cmd(AROTATE)   when AROTATE;
+      @a[*-1].r = self.cmd(TRANSPOSE) when TRANSPOSE;
+			default { @a[*-1].r = 0 };
+		}
+
+  });
+}
+
 method update-grid () {
   for ^$!row-count X ^$!col-count -> ($r, $c) {
     $!grid.child-set-int(@!sym[$++], 'top_attach',  $r);
@@ -176,35 +177,30 @@ method status () {
   "U:" ~ @!unigram.elems ~ " B:" ~ @!bigram.elems ~ " T:" ~ @!trigram.elems;
 }
 
-method cmd (:$cmd) {
-  given $cmd {
-    when HFLIP {
-      self.flip(HORIZONTAL);
-      self.update-grid;
-      True;
-    }
-    when VFLIP {
-      self.flip(VERTICAL);
-      self.update-grid;
-      True;
-    }
+multi method cmd (HFLIP) {
+  self.hflip();
+  self.update-grid;
+  True;
+}
+multi method cmd (VFLIP) {
+  self.vflip();
+  self.update-grid;
+  True;
+}
+multi method cmd (CROTATE) {
+  self.crotate();
+  self.update-grid;
+  True;
+}
 
-    when CROTATE {
-      self.rotate(CLOCKWISE);
-      self.update-grid;
-      True;
-    }
+multi method cmd (AROTATE) {
+  self.arotate();
+  self.update-grid;
+  True;
+}
 
-    when AROTATE {
-      self.rotate(ANTICLOCKWISE);
-      self.update-grid;
-      True;
-    }
-
-    when TRANSPOSE {
-      self.transpose;
-      self.update-grid;
-      True;
-    }
-  }
+multi method cmd (TRANSPOSE) {
+  self.transpose();
+  self.update-grid;
+  True;
 }
