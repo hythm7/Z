@@ -1,6 +1,9 @@
 use GTK::Raw::Types;
 use GTK::Compat::Types;
-use GTK::Grid;
+use GTK::Utils::MenuBuilder;
+use GTK::FlowBox;
+use GTK::FlowBoxChild;
+use GTK::Statusbar;
 use Z::Cipher::Sym;
 
 enum COMMAND is export (
@@ -41,7 +44,10 @@ has     @!quintgram;
 
 has @!sym;
 
-has GTK::Grid $!grid;
+has                $!menu;
+
+has GTK::FlowBox   $!flowbox;
+#has GTK::Statusbar $!statusbar;
 
 
 method new (IO::Path :$filename!) {
@@ -71,7 +77,9 @@ submethod BUILD (
 	@!quadgram  = self.gram(QUAD);
 	@!quintgram = self.gram(QUINT);
 
-	self.create-grid();
+	self.create-menu();
+	self.create-flowbox();
+  #self.create-statusbar();
 	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
 
@@ -82,7 +90,8 @@ method gist (Z::Cipher:D:) {
 method sym-count () { $!sym-count }
 method row-count () { $!row-count }
 method col-count () { $!col-count }
-method grid      () { $!grid }
+method menu      () { $!menu }
+method flowbox      () { $!flowbox }
 
 method transpose () {
   my @transposed;
@@ -143,21 +152,27 @@ multi method gram (Z::Cipher:D: GRAM $g) {
 
 }
 
-method create-grid () {
+method create-flowbox () {
 
-  $!grid = GTK::Grid.new;
-  $!grid.halign = GTK_ALIGN_START;
-  $!grid.valign = GTK_ALIGN_START;
-  $!grid.row-homogeneous = True;
-  $!grid.column-homogeneous = True;
+  $!flowbox = GTK::FlowBox.new;
+  $!flowbox.min_children_per_line = $!col-count;
+  $!flowbox.max_children_per_line = $!col-count;
 
-  for ^$!row-count X ^$!col-count -> ($r, $c) {
-    $!grid.attach: @!sym[$++], $c, $r, 1, 1;
+  $!flowbox.halign = GTK_ALIGN_START;
+  $!flowbox.valign = GTK_ALIGN_START;
+  $!flowbox.homogeneous = True;
+  for @!sym -> $sym {
+    my $child =  GTK::FlowBoxChild.new;
+    $child.add: $sym;
+    $!flowbox.add: $child;
   }
+  #for ^$!row-count X ^$!col-count -> ($r, $c) {
+    #  $!flowbox.attach: @!sym[$++], $c, $r, 1, 1;
+    # }
 
-	$!grid.add-events: GDK_KEY_PRESS_MASK;
+	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
   
-  $!grid.key-press-event.tap( -> *@a {
+  $!flowbox.key-press-event.tap( -> *@a {
     my $cmd = cast(GdkEventKey, @a[1]).keyval;
 
 		given $cmd {
@@ -179,11 +194,30 @@ method create-grid () {
   });
 }
 
-method update-grid () {
-  for ^$!row-count X ^$!col-count -> ($r, $c) {
-    $!grid.child-set-int(@!sym[$++], 'top_attach',  $r);
-    $!grid.child-set-int(@!sym[$++], 'left_attach', $c);
-  }
+method create-menu () {
+  $!menu = GTK::Utils::MenuBuilder.new(:bar, TOP => [
+    File => [
+      'Open Cipher'   => { 'do' => -> { self.open-cipher-file  } },
+      'Save Cipher'   => { 'do' => -> { self.save-cipher-file  } },
+      '-'              => False,
+      Close            => { 'do' => -> { self.close-file         } },
+      Quit             => { 'do' => -> { self.quit               } },
+    ],
+    View => [
+      'Statusbar' => { :check, 'do' => -> { say 'toggled'         } },
+    ],
+  ]);
+}
+
+#method create-statusbar () {
+  #  $!statusbar = GTK::Statusbar.new;
+
+  #}
+
+method update-flowbox () {
+  #for ^$!row-count X ^$!col-count -> ($r, $c) {
+      say $!flowbox.get-child-at-index(2);
+    #}
 }
 
 method status () {
@@ -192,33 +226,34 @@ method status () {
 
 multi method cmd (HFLIP) {
   self.hflip();
-  self.update-grid;
+  self.update-flowbox;
   True;
 }
 multi method cmd (VFLIP) {
   self.vflip();
-  self.update-grid;
+  self.update-flowbox;
   True;
 }
 multi method cmd (CROTATE) {
   self.crotate();
-  self.update-grid;
+  self.update-flowbox;
   True;
 }
 
 multi method cmd (AROTATE) {
   self.arotate();
-  self.update-grid;
+  self.update-flowbox;
   True;
 }
 
 multi method cmd (TRANSPOSE) {
   self.transpose();
-  self.update-grid;
+  self.update-flowbox;
   True;
 }
 multi method cmd (UNIGRAMS) {
-  say self.gram(UNI).elems;
+  #say self.gram(UNI).elems;
+  say $!flowbox.get-children();
   True;
 }
 multi method cmd (BIGRAMS) {

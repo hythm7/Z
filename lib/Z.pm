@@ -43,14 +43,15 @@ submethod BUILD () {
 }
 
 multi method win ( CIPHER, :$filename ) {
-	my $grid = Z::Cipher.new(:$filename).grid;
-	#my Z::Cipher  $cipher .= new: :$filename;
+	my $cipher = Z::Cipher.new(:$filename);
+  my $menu = $cipher.menu;
+  my $flowbox = $cipher.flowbox;
+  
   my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
-  my $*statusbar = GTK::Statusbar.new;
   my $box =  GTK::Box.new-vbox();
   
-  $box.pack_start($grid);
-  #$box.pack_start($*statusbar);
+  #$box.pack_start($menu.menu);
+  $box.pack_start($flowbox);
 
   $window.add($box);
   
