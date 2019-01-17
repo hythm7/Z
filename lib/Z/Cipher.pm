@@ -9,12 +9,14 @@ use Z::Cipher::Sym;
 enum COMMAND is export (
   VFLIP      => 70,
   HFLIP      => 102,
-
   AROTATE    => 82,
   CROTATE    => 114,
-
   TRANSPOSE  => 116,
-
+  VMIRROR    => 77,
+  HMIRROR    => 109,
+  CANGLE     => 65,
+  AANGLE     => 97,
+  CHANGE     => 99,
   UNIGRAMS   => 49,
 	BIGRAMS    => 50,
 	TRIGRAMS   => 51,
@@ -66,7 +68,7 @@ submethod BUILD (
   :$row-count!,
   :$col-count!,
 ) {
-	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new_with_label($label) });
+	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new($label) });
 	$!sym-count = @sym.elems;
 	$!row-count = $row-count;
 	$!col-count = $col-count;
@@ -91,7 +93,7 @@ method sym-count () { $!sym-count }
 method row-count () { $!row-count }
 method col-count () { $!col-count }
 method menu      () { $!menu }
-method flowbox      () { $!flowbox }
+method flowbox   () { $!flowbox }
 
 method transpose () {
   my @transposed;
@@ -152,6 +154,7 @@ multi method gram (Z::Cipher:D: GRAM $g) {
 
 }
 
+my @fbc;
 method create-flowbox () {
 
   $!flowbox = GTK::FlowBox.new;
@@ -161,11 +164,16 @@ method create-flowbox () {
   $!flowbox.halign = GTK_ALIGN_START;
   $!flowbox.valign = GTK_ALIGN_START;
   $!flowbox.homogeneous = True;
+  
+  $!flowbox.selection-mode = GTK_SELECTION_MULTIPLE;
+  
   for @!sym -> $sym {
-    my $child =  GTK::FlowBoxChild.new;
+    @fbc.push: (my $child = GTK::FlowBoxChild.new);
     $child.add: $sym;
+    $child.upref;
     $!flowbox.add: $child;
   }
+  
   #for ^$!row-count X ^$!col-count -> ($r, $c) {
     #  $!flowbox.attach: @!sym[$++], $c, $r, 1, 1;
     # }
@@ -181,7 +189,11 @@ method create-flowbox () {
       @a[*-1].r = self.cmd(CROTATE)    when CROTATE;
       @a[*-1].r = self.cmd(AROTATE)    when AROTATE;
       @a[*-1].r = self.cmd(TRANSPOSE)  when TRANSPOSE;
-
+      @a[*-1].r = self.cmd(HMIRROR)    when HMIRROR;
+      @a[*-1].r = self.cmd(VMIRROR)    when VMIRROR;
+      @a[*-1].r = self.cmd(CANGLE)     when CANGLE;
+      @a[*-1].r = self.cmd(AANGLE)     when AANGLE;
+      @a[*-1].r = self.cmd(CHANGE)     when CHANGE;
       @a[*-1].r = self.cmd(UNIGRAMS)   when UNIGRAMS;
       @a[*-1].r = self.cmd(BIGRAMS)    when BIGRAMS;
       @a[*-1].r = self.cmd(TRIGRAMS)   when TRIGRAMS;
@@ -214,10 +226,13 @@ method create-menu () {
 
   #}
 
-method update-flowbox () {
-  #for ^$!row-count X ^$!col-count -> ($r, $c) {
-      say $!flowbox.get-child-at-index(2);
-    #}
+method renew-flowbox () {
+  $!flowbox.remove-all();
+  for @fbc {
+    .upref;
+    $!flowbox.add: $_;
+  }
+  #$!flowbox.show-all;
 }
 
 method status () {
@@ -225,30 +240,65 @@ method status () {
 }
 
 multi method cmd (HFLIP) {
-  self.hflip();
-  self.update-flowbox;
+  say 'f';
+  self.hflip;
+  self.renew-flowbox;
   True;
 }
 multi method cmd (VFLIP) {
-  self.vflip();
-  self.update-flowbox;
+  say 'F';
+  self.vflip;
+  self.renew-flowbox;
   True;
 }
 multi method cmd (CROTATE) {
-  self.crotate();
-  self.update-flowbox;
+  say 'r';
+  self.crotate;
+  self.renew-flowbox;
   True;
 }
 
 multi method cmd (AROTATE) {
-  self.arotate();
-  self.update-flowbox;
+  say 'R';
+  self.arotate;
+  self.renew-flowbox;
+  True;
+}
+
+multi method cmd (HMIRROR) {
+  say 'm';
+  say 'HFLIP';
+  say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
+  True;
+}
+
+multi method cmd (VMIRROR) {
+  say 'M';
+  say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
+  True;
+}
+
+multi method cmd (CANGLE) {
+  say 'a';
+  say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
+  True;
+}
+
+multi method cmd (AANGLE) {
+  say 'A';
+  say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
+  True;
+}
+
+multi method cmd (CHANGE) {
+  say 'c';
+  $!flowbox.get-selected-children.map({ .get-child.label = 'z' });
   True;
 }
 
 multi method cmd (TRANSPOSE) {
   self.transpose();
-  self.update-flowbox;
+  self.renew-flowbox;
   True;
 }
 multi method cmd (UNIGRAMS) {

@@ -1,15 +1,10 @@
 use GTK::Raw::Types;
-use GTK::Button;
+use GTK::Label;
 
 unit class Z::Cipher::Sym;
-  also is GTK::Button;
+  also is GTK::Label;
+  
+  submethod BUILD () {
+    self.max-width-chars = 1;
+  }
 
-submethod BUILD () {
-  self.relief = GTK_RELIEF_NONE;
-  
-  #self.hexpand = True;
-  #self.vexpand = True;
-  
-  #self.halign = GTK_ALIGN_CENTER;
-  #self.valign = GTK_ALIGN_CENTER;
-}
