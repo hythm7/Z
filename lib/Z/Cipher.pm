@@ -68,7 +68,7 @@ submethod BUILD (
   :$row-count!,
   :$col-count!,
 ) {
-	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new($label) });
+	@!sym       = @sym.map( -> $sym { Z::Cipher::Sym.new(sym => $sym, order => $++) });
 	$!sym-count = @sym.elems;
 	$!row-count = $row-count;
 	$!col-count = $col-count;
@@ -86,7 +86,7 @@ submethod BUILD (
 }
 
 method gist (Z::Cipher:D:) {
-		put .map(*.label) for @!sym.rotor($!col-count);
+		put .map(*.sym.label) for @!sym.rotor($!col-count);
 }
 
 method sym-count () { $!sym-count }
@@ -112,6 +112,7 @@ method transpose () {
 multi method hflip () {
 	my @flipped = @!sym.rotor($!col-count).map(*.reverse).flat;
   @!sym = @flipped;
+	say $!flowbox.get-children;
 }
 
 multi method vflip () {
@@ -131,7 +132,7 @@ multi method arotate () {
 
 multi method gram (Z::Cipher:D: UNI $g) {
 	my $b =  0;                 # back step
-  my $bag = @!sym>>.label.rotor($g => $b).map(*.join).Bag;
+  my $bag = @!sym>>.sym>>.label.rotor($g => $b).map(*.join).Bag;
 
 	my @gram = gather for $bag.pairs {
 		.take;
@@ -143,7 +144,7 @@ multi method gram (Z::Cipher:D: UNI $g) {
 
 multi method gram (Z::Cipher:D: GRAM $g) {
 	my $b = $g - ($g + $g - 1);                 # back step
-  my $bag = @!sym>>.label.rotor($g => $b).map(*.join).Bag;
+  my $bag = @!sym>>.sym>>.label.rotor($g => $b).map(*.join).Bag;
 
 	#.say for $bag.pairs;
 	my @gram = gather for $bag.pairs {
@@ -165,14 +166,24 @@ method create-flowbox () {
   $!flowbox.valign = GTK_ALIGN_START;
   $!flowbox.homogeneous = True;
   
+	$!flowbox.set-sort-func(-> $c1, $c2, $ --> gint {
+    CATCH { default { .message.say } }
+    my gint $r = +$c1.p <=> +$c2.p;
+    $r;
+  });
+
   $!flowbox.selection-mode = GTK_SELECTION_MULTIPLE;
   
-  for @!sym -> $sym {
-    @fbc.push: (my $child = GTK::FlowBoxChild.new);
-    $child.add: $sym;
-    $child.upref;
-    $!flowbox.add: $child;
-  }
+	#$!flowbox.add: $_ for @!sym;
+	for @!sym -> $sym {
+		# say $sym.WHAT , " ", $sym.sym, " ", $sym.sym.label;
+		$!flowbox.add: $sym;
+	}
+	#for @!sym -> $sym {
+	#	  @fbc.push: (my $child = GTK::FlowBoxChild.new);
+	#	$child.add: $sym;
+	#	$!flowbox.add: $child;
+	#	}
   
   #for ^$!row-count X ^$!col-count -> ($r, $c) {
     #  $!flowbox.attach: @!sym[$++], $c, $r, 1, 1;
@@ -226,14 +237,7 @@ method create-menu () {
 
   #}
 
-method renew-flowbox () {
-  $!flowbox.remove-all();
-  for @fbc {
-    .upref;
-    $!flowbox.add: $_;
-  }
-  #$!flowbox.show-all;
-}
+
 
 method status () {
   "U:" ~ @!unigram.elems ~ " B:" ~ @!bigram.elems ~ " T:" ~ @!trigram.elems;
@@ -242,26 +246,23 @@ method status () {
 multi method cmd (HFLIP) {
   say 'f';
   self.hflip;
-  self.renew-flowbox;
+	$!flowbox.invalidate-sort;
   True;
 }
 multi method cmd (VFLIP) {
   say 'F';
   self.vflip;
-  self.renew-flowbox;
   True;
 }
 multi method cmd (CROTATE) {
   say 'r';
   self.crotate;
-  self.renew-flowbox;
   True;
 }
 
 multi method cmd (AROTATE) {
   say 'R';
   self.arotate;
-  self.renew-flowbox;
   True;
 }
 
@@ -292,13 +293,12 @@ multi method cmd (AANGLE) {
 
 multi method cmd (CHANGE) {
   say 'c';
-  $!flowbox.get-selected-children.map({ .get-child.label = 'z' });
+  $!flowbox.get-selected-children.map({ .get-child.sym.label = 'z' });
   True;
 }
 
 multi method cmd (TRANSPOSE) {
   self.transpose();
-  self.renew-flowbox;
   True;
 }
 multi method cmd (UNIGRAMS) {
