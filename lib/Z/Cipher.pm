@@ -86,6 +86,7 @@ multi method gram (Z::Cipher:D: UNI $g) {
 	}
 
   @gram;
+:w
 
 }
 
@@ -110,7 +111,12 @@ multi method cmd (HFLIP) {
   say 'f';
   my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
 
-	@subgrid ?? @fbc .= hflip: :@subgrid !!  @fbc .= hflip;
+  if @subgrid {
+    @fbc := @fbc.hflip: :@subgrid;
+  }
+  else {
+    @fbc := @fbc.hflip;
+  }
 
 	%order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
@@ -120,7 +126,13 @@ multi method cmd (VFLIP) {
   say 'F';
   my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
 
-	@subgrid ?? @fbc .= vflip: :@subgrid !!  @fbc .= vflip;
+  if @subgrid {
+    @fbc := @fbc.vflip: :@subgrid;
+  }
+  else {
+    @fbc := @fbc.vflip;
+  }
+
 
   %order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
@@ -130,7 +142,13 @@ multi method cmd (CROTATE) {
   say 'r';
   my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
 
-	@subgrid ?? @fbc .= crotate: :@subgrid !!  @fbc .= crotate;
+  if @subgrid {
+    @fbc := @fbc.crotate: :@subgrid;
+  }
+  else {
+    @fbc := @fbc.crotate;
+  }
+
   
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
@@ -144,7 +162,13 @@ multi method cmd (AROTATE) {
   say 'R';
   my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
 
-	@subgrid ?? @fbc .= arotate: :@subgrid !!  @fbc .= arotate;
+  if @subgrid {
+    @fbc := @fbc.arotate: :@subgrid;
+  }
+  else {
+    @fbc := @fbc.arotate;
+  }
+
 
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
@@ -158,17 +182,19 @@ multi method cmd (TRANSPOSE) {
   say 'R';
   my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
 
-	say 'FBC COLUMNS ', @fbc.columns;
-	say 'FB  COLUMNS ', $!flowbox.min_children_per_line;
-	@subgrid ?? @fbc .= transpose: :@subgrid !!  @fbc .= transpose;
+  if @subgrid {
+    @fbc := @fbc.transpose: :@subgrid;
+  }
+  else {
+    @fbc := @fbc.transpose;
+  }
+
 
 	say '------';
 
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
 
-	say 'FBC COLUMNS ', @fbc.columns;
-	say 'FB  COLUMNS ', $!flowbox.min_children_per_line;
 
   %order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
