@@ -1,4 +1,4 @@
-use Array::Grid;
+use Grid;
 use GTK::Raw::Types;
 use GTK::Compat::Types;
 use GTK::Utils::MenuBuilder;
@@ -86,8 +86,6 @@ multi method gram (Z::Cipher:D: UNI $g) {
 	}
 
   @gram;
-:w
-
 }
 
 multi method gram (Z::Cipher:D: GRAM $g) {
@@ -100,7 +98,6 @@ multi method gram (Z::Cipher:D: GRAM $g) {
 	}
 
   @gram;
-
 }
 
 method status () {
@@ -189,12 +186,8 @@ multi method cmd (TRANSPOSE) {
     @fbc := @fbc.transpose;
   }
 
-
-	say '------';
-
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
-
 
   %order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
@@ -302,7 +295,7 @@ method !create-flowbox () {
   
   @fbc = $!flowbox.get-children;
 
-	@fbc does Array::Grid[:$!columns];
+	@fbc does Grid[:$!columns];
   
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
