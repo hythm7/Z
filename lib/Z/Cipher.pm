@@ -1,3 +1,4 @@
+use Array::Grid;
 use GTK::Raw::Types;
 use GTK::Compat::Types;
 use GTK::Utils::MenuBuilder;
@@ -15,8 +16,8 @@ my %order;
 unit class Z::Cipher;
 
 has Int $!sym-count;
-has Int $!row-count;
-has Int $!col-count;
+has Int $!rows;
+has Int $!columns;
 has     @!unigram;
 has     @!bigram;
 has     @!trigram;
@@ -35,22 +36,22 @@ method new (IO::Path :$filename!) {
 	my $file = slurp $filename;
 	return Nil unless [==] (.chars for $file.lines);
 
-	my $row-count = $file.lines.elems;
-	my $col-count = $file.lines[0].chars;
+	my $rows = $file.lines.elems;
+	my $columns = $file.lines[0].chars;
 
 	my @sym = $file.comb: /\N/;
-	self.bless(:@sym, :$row-count, :$col-count);
+	self.bless(:@sym, :$rows, :$columns);
 }
 
 submethod BUILD (
   :@sym!,
-  :$row-count!,
-  :$col-count!,
+  :$rows!,
+  :$columns!,
 ) {
 	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new($label) });
 	$!sym-count = @sym.elems;
-	$!row-count = $row-count;
-	$!col-count = $col-count;
+	$!rows = $rows;
+	$!columns = $columns;
 
 	@!unigram   = self.gram(UNI);
 	@!bigram    = self.gram(BI);
@@ -58,78 +59,23 @@ submethod BUILD (
 	@!quadgram  = self.gram(QUAD);
 	@!quintgram = self.gram(QUINT);
 
-  #self.create-menu();
+  #se.create-menu();
 	self!create-flowbox();
   #self.create-statusbar();
 	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
 }
 
 method gist (Z::Cipher:D:) {
-  put .map(*.label) for @!sym.rotor($!col-count);
+  put .map(*.label) for @!sym.rotor($!columns);
 }
 
 method sym-count () { $!sym-count }
-method row-count () { $!row-count }
-method col-count () { $!col-count }
+method rows () { $!rows }
+method columns () { $!columns }
 method menu      () { $!menu }
 method flowbox   () { $!flowbox }
 
-method transpose () {
-  #my @transposed;
-  #my @rotored = @!sym.rotor($!col-count);
 
-  #for ^$!row-count X ^$!col-count -> ($r, $c) {
-    #  @transposed[$c][$r] = @rotored[$r][$c];
-    #}
-
-    #@transposed = gather @transposed.deepmap: *.take;
-
-    #($!row-count, $!col-count) .= reverse;
-  
-    #@!sym = @transposed;
-  
-
-  my @transposed;
-  my @rotored = @fbc.rotor($!col-count);
-
-	for ^$!row-count X ^$!col-count -> ($r, $c) {
-    @transposed[$c][$r] = @rotored[$r][$c];
-	}
-
-	@transposed = gather @transposed.deepmap: *.take;
-
-  ($!row-count, $!col-count) .= reverse;
-  
-  $!flowbox.min_children_per_line = $!col-count;
-  $!flowbox.max_children_per_line = $!col-count;
-  @fbc = @transposed;
-
-}
-
-multi method hflip () {
-  #my @flipped = @!sym.rotor($!col-count).map(*.reverse).flat;
-  #@!sym = @flipped;
-  my @flipped = @fbc.rotor($!col-count).map(*.reverse).flat;
-  @fbc = @flipped;
-}
-
-multi method vflip () {
-  #my @flipped  = @!sym.rotor($!col-count).reverse.flat;
-  #@!sym = @flipped;
-  
-  my @flipped  = @fbc.rotor($!col-count).reverse.flat;
-  @fbc = @flipped;
-}
-
-multi method crotate () {
-  self.transpose();
-  self.hflip();
-}
-
-multi method arotate () {
-  self.transpose();
-  self.vflip();
-}
 
 multi method gram (Z::Cipher:D: UNI $g) {
 	my $b =  0;                 # back step
@@ -162,21 +108,33 @@ method status () {
 
 multi method cmd (HFLIP) {
   say 'f';
-  self.hflip;
-  %order{ +.flowboxchild.p } = $++ for @fbc;
+  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+
+	@subgrid ?? @fbc .= hflip: :@subgrid !!  @fbc .= hflip;
+
+	%order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
-  True;
+	True;
 }
 multi method cmd (VFLIP) {
   say 'F';
-  self.vflip;
+  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+
+	@subgrid ?? @fbc .= vflip: :@subgrid !!  @fbc .= vflip;
+
   %order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
   True;
 }
 multi method cmd (CROTATE) {
   say 'r';
-  self.crotate;
+  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+
+	@subgrid ?? @fbc .= crotate: :@subgrid !!  @fbc .= crotate;
+  
+  $!flowbox.min_children_per_line = @fbc.columns;
+  $!flowbox.max_children_per_line = @fbc.columns;
+
   %order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
   True;
@@ -184,7 +142,34 @@ multi method cmd (CROTATE) {
 
 multi method cmd (AROTATE) {
   say 'R';
-  self.arotate;
+  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+
+	@subgrid ?? @fbc .= arotate: :@subgrid !!  @fbc .= arotate;
+
+  $!flowbox.min_children_per_line = @fbc.columns;
+  $!flowbox.max_children_per_line = @fbc.columns;
+
+  %order{ +.flowboxchild.p } = $++ for @fbc;
+	$!flowbox.invalidate-sort;
+  True;
+}
+
+multi method cmd (TRANSPOSE) {
+  say 'R';
+  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+
+	say 'FBC COLUMNS ', @fbc.columns;
+	say 'FB  COLUMNS ', $!flowbox.min_children_per_line;
+	@subgrid ?? @fbc .= transpose: :@subgrid !!  @fbc .= transpose;
+
+	say '------';
+
+  $!flowbox.min_children_per_line = @fbc.columns;
+  $!flowbox.max_children_per_line = @fbc.columns;
+
+	say 'FBC COLUMNS ', @fbc.columns;
+	say 'FB  COLUMNS ', $!flowbox.min_children_per_line;
+
   %order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
   True;
@@ -221,12 +206,7 @@ multi method cmd (CHANGE) {
   True;
 }
 
-multi method cmd (TRANSPOSE) {
-  self.transpose();
-  %order{ +.flowboxchild.p } = $++ for @fbc;
-	$!flowbox.invalidate-sort;
-  True;
-}
+
 multi method cmd (UNIGRAMS) {
   #say self.gram(UNI).elems;
   say $!flowbox.get-children();
@@ -276,10 +256,6 @@ method !fb-key-press-event (@a) {
 method !create-flowbox () {
 
   $!flowbox = GTK::FlowBox.new;
-  
-  $!flowbox.min_children_per_line = $!col-count;
-  $!flowbox.max_children_per_line = $!col-count;
-
   $!flowbox.halign = GTK_ALIGN_START;
   $!flowbox.valign = GTK_ALIGN_START;
   $!flowbox.homogeneous = True;
@@ -299,6 +275,12 @@ method !create-flowbox () {
   }
   
   @fbc = $!flowbox.get-children;
+
+	@fbc does Array::Grid[:$!columns];
+  
+  $!flowbox.min_children_per_line = @fbc.columns;
+  $!flowbox.max_children_per_line = @fbc.columns;
+
   
 	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
   
