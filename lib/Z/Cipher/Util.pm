@@ -1,21 +1,21 @@
 unit module Z::Cipher::Util;
 
 enum COMMAND is export (
-  VFLIP      => 70,
-  HFLIP      => 102,
-  AROTATE    => 82,
-  CROTATE    => 114,
-  TRANSPOSE  => 116,
-  VMIRROR    => 77,
-  HMIRROR    => 109,
-  CANGLE     => 65,
-  AANGLE     => 97,
-  CHANGE     => 99,
-  UNIGRAMS   => 49,
-  BIGRAMS    => 50,
-  TRIGRAMS   => 51,
-  QUADGRAMS  => 52,
-  QUINTGRAMS => 53,
+  FLIP_VERTICAL         => 70,
+  FLIP_HORIZONTAL      => 102,
+  ROTATE_ANTICLOCKWISE => 82,
+  ROTATE_CLOCKWISE     => 114,
+  TRANSPOSE            => 116,
+  MIRROR_VERTICAL      => 77,
+  MIRROR_HORIZONTAL    => 109,
+  ANGLE_CLOCKWISE      => 65,
+  ANGLE_ANTICLOCKWISE  => 97,
+  CHANGE               => 99,
+  UNIGRAMS             => 49,
+  BIGRAMS              => 50,
+  TRIGRAMS             => 51,
+  QUADGRAMS            => 52,
+  QUINTGRAMS           => 53,
 );
 
 enum GRAM is export (

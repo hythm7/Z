@@ -77,7 +77,7 @@ method flowbox   () { $!flowbox }
 
 
 
-multi method gram (Z::Cipher:D: UNI $g) {
+multi method gram (Z::Cipher:D: UNI $g ) {
 	my $b =  0;                 # back step
   my $bag = @!sym.map(*.label).rotor($g => $b).map(*.join).Bag;
 
@@ -88,7 +88,7 @@ multi method gram (Z::Cipher:D: UNI $g) {
   @gram;
 }
 
-multi method gram (Z::Cipher:D: GRAM $g) {
+multi method gram (Z::Cipher:D: GRAM $g ) {
 	my $b = $g - ($g + $g - 1);                 # back step
   my $bag = @!sym.map(*.label).rotor($g => $b).map(*.join).Bag;
 
@@ -104,30 +104,30 @@ method status () {
   "U:" ~ @!unigram.elems ~ " B:" ~ @!bigram.elems ~ " T:" ~ @!trigram.elems;
 }
 
-multi method cmd (HFLIP) {
+multi method cmd ( $ where +FLIP_HORIZONTAL ) {
   say 'f';
-  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+  my @horizontal = $!flowbox.get-selected-children.map(*.get-index);
 
-  if @subgrid {
-    @fbc := @fbc.hflip: :@subgrid;
+  if @horizontal {
+    @fbc := @fbc.flip: :@horizontal;
   }
   else {
-    @fbc := @fbc.hflip;
+    @fbc := @fbc.flip: :horizontal;
   }
 
 	%order{ +.flowboxchild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
 	True;
 }
-multi method cmd (VFLIP) {
+multi method cmd ( $ where +FLIP_VERTICAL ) {
   say 'F';
-  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+  my @vertical = $!flowbox.get-selected-children.map(*.get-index);
 
-  if @subgrid {
-    @fbc := @fbc.vflip: :@subgrid;
+  if @vertical {
+    @fbc := @fbc.flip: :@vertical;
   }
   else {
-    @fbc := @fbc.vflip;
+    @fbc := @fbc.flip: :vertical;
   }
 
 
@@ -135,15 +135,15 @@ multi method cmd (VFLIP) {
 	$!flowbox.invalidate-sort;
   True;
 }
-multi method cmd (CROTATE) {
+multi method cmd ( $ where +ROTATE_CLOCKWISE ) {
   say 'r';
-  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+  my @clockwise = $!flowbox.get-selected-children.map(*.get-index);
 
-  if @subgrid {
-    @fbc := @fbc.crotate: :@subgrid;
+  if @clockwise {
+    @fbc := @fbc.rotate: :@clockwise;
   }
   else {
-    @fbc := @fbc.crotate;
+    @fbc := @fbc.rotate: :clockwise;
   }
 
   
@@ -155,15 +155,15 @@ multi method cmd (CROTATE) {
   True;
 }
 
-multi method cmd (AROTATE) {
+multi method cmd ( $ where +ROTATE_ANTICLOCKWISE ) {
   say 'R';
-  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+  my @anticlockwise = $!flowbox.get-selected-children.map(*.get-index);
 
-  if @subgrid {
-    @fbc := @fbc.arotate: :@subgrid;
+  if @anticlockwise {
+    @fbc := @fbc.rotate: :@anticlockwise;
   }
   else {
-    @fbc := @fbc.arotate;
+    @fbc := @fbc.rotate: :anticlockwise;
   }
 
 
@@ -175,12 +175,12 @@ multi method cmd (AROTATE) {
   True;
 }
 
-multi method cmd (TRANSPOSE) {
+multi method cmd ( $ where +TRANSPOSE ) {
   say 'R';
-  my @subgrid = $!flowbox.get-selected-children.map(*.get-index);
+  my @indices = $!flowbox.get-selected-children.map(*.get-index);
 
-  if @subgrid {
-    @fbc := @fbc.transpose: :@subgrid;
+  if @indices {
+    @fbc := @fbc.transpose: :@indices;
   }
   else {
     @fbc := @fbc.transpose;
@@ -194,83 +194,60 @@ multi method cmd (TRANSPOSE) {
   True;
 }
 
-multi method cmd (HMIRROR) {
+multi method cmd ( $ where +MIRROR_HORIZONTAL ) {
   say 'm';
   say 'HFLIP';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
   True;
 }
 
-multi method cmd (VMIRROR) {
+multi method cmd ( $ where +MIRROR_VERTICAL ) {
   say 'M';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
   True;
 }
 
-multi method cmd (CANGLE) {
+multi method cmd ( $ where +ANGLE_CLOCKWISE ) {
   say 'a';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
   True;
 }
 
-multi method cmd (AANGLE) {
+multi method cmd ( $ where +ANGLE_ANTICLOCKWISE ) {
   say 'A';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
   True;
 }
 
-multi method cmd (CHANGE) {
+multi method cmd ( $ where +CHANGE ) {
   say 'c';
   $!flowbox.get-selected-children.map({ .get-child.sym.label = 'z' });
   True;
 }
 
 
-multi method cmd (UNIGRAMS) {
+multi method cmd ( $ where +UNIGRAMS ) {
   #say self.gram(UNI).elems;
   say $!flowbox.get-children();
   True;
 }
-multi method cmd (BIGRAMS) {
+multi method cmd ( $ where +BIGRAMS ) {
   say self.gram(BI).elems;
   True;
 }
-multi method cmd (TRIGRAMS) {
+multi method cmd ( $ where +TRIGRAMS ) {
   say self.gram(TRI).elems;
   True;
 }
-multi method cmd (QUADGRAMS) {
+multi method cmd ( $ where +QUADGRAMS ) {
   say self.gram(QUAD).elems;
   True;
 }
-multi method cmd (QUINTGRAMS) {
+multi method cmd ( $ where +QUINTGRAMS ) {
   say self.gram(QUINT).elems;
   True;
 }
 
-method !fb-key-press-event (@a) {
-  my $cmd = cast(GdkEventKey, @a[1]).keyval;
-
-    given $cmd {
-      @a[*-1].r = self.cmd(HFLIP)      when HFLIP;
-      @a[*-1].r = self.cmd(VFLIP)      when VFLIP;
-      @a[*-1].r = self.cmd(CROTATE)    when CROTATE;
-      @a[*-1].r = self.cmd(AROTATE)    when AROTATE;
-      @a[*-1].r = self.cmd(TRANSPOSE)  when TRANSPOSE;
-      @a[*-1].r = self.cmd(HMIRROR)    when HMIRROR;
-      @a[*-1].r = self.cmd(VMIRROR)    when VMIRROR;
-      @a[*-1].r = self.cmd(CANGLE)     when CANGLE;
-      @a[*-1].r = self.cmd(AANGLE)     when AANGLE;
-      @a[*-1].r = self.cmd(CHANGE)     when CHANGE;
-      @a[*-1].r = self.cmd(UNIGRAMS)   when UNIGRAMS;
-      @a[*-1].r = self.cmd(BIGRAMS)    when BIGRAMS;
-      @a[*-1].r = self.cmd(TRIGRAMS)   when TRIGRAMS;
-      @a[*-1].r = self.cmd(QUADGRAMS)  when QUADGRAMS;
-      @a[*-1].r = self.cmd(QUINTGRAMS) when QUINTGRAMS;
-
-      default { @a[*-1].r = 0 };
-    }
-}
 
 method !create-flowbox () {
 
@@ -303,7 +280,11 @@ method !create-flowbox () {
   
 	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
   
-  $!flowbox.key-press-event.tap( -> *@a { self!fb-key-press-event(@a) });
+  $!flowbox.key-press-event.tap( -> *@a {
+    my $cmd = cast(GdkEventKey, @a[1]).keyval;
+    self.cmd($cmd) if COMMAND($cmd);
+    @a[*-1].r = 0;
+  });
 }
 
 #method create-statusbar () {
