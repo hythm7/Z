@@ -115,7 +115,7 @@ multi method cmd ( $ where +FLIP_HORIZONTAL ) {
     @fbc := @fbc.flip: :horizontal;
   }
 
-	%order{ +.flowboxchild.p } = $++ for @fbc;
+	%order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
 	True;
 }
@@ -131,7 +131,7 @@ multi method cmd ( $ where +FLIP_VERTICAL ) {
   }
 
 
-  %order{ +.flowboxchild.p } = $++ for @fbc;
+  %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
   True;
 }
@@ -150,7 +150,7 @@ multi method cmd ( $ where +ROTATE_CLOCKWISE ) {
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
 
-  %order{ +.flowboxchild.p } = $++ for @fbc;
+  %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
   True;
 }
@@ -170,7 +170,7 @@ multi method cmd ( $ where +ROTATE_ANTICLOCKWISE ) {
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
 
-  %order{ +.flowboxchild.p } = $++ for @fbc;
+  %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
   True;
 }
@@ -189,7 +189,7 @@ multi method cmd ( $ where +TRANSPOSE ) {
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
 
-  %order{ +.flowboxchild.p } = $++ for @fbc;
+  %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
   True;
 }
@@ -258,18 +258,21 @@ method !create-flowbox () {
   
 	$!flowbox.set-sort-func(-> $c1, $c2, $ --> gint {
     CATCH { default { .message.say } }
-    %order{ +$c1.p } <=> %order{ +$c2.p };
+    my gint $r = %order{ +$c1.p } <=> %order{ +$c2.p };
+    $r;
   });
 
   $!flowbox.selection-mode = GTK_SELECTION_MULTIPLE;
   
   for @!sym -> $sym {
     my $child = GTK::FlowBoxChild.new;
-    $child.add: $sym;
-    %order{ +$child.flowboxchild.p } = $++;
-    $!flowbox.add: $child;
+     $child.add: $sym;
+     %order{ +$child.FlowBoxChild.p } = $++;
+     say $sym.label;
+     $!flowbox.add: $child;
   }
   
+
   @fbc = $!flowbox.get-children;
 
 	@fbc does Grid[:$!columns];
