@@ -26,10 +26,8 @@ has     @!quintgram;
 
 has @!sym;
 
-has                $!menu;
-
 has GTK::FlowBox   $!flowbox;
-#has GTK::Statusbar $!statusbar;
+has GTK::Statusbar $!statusbar;
 
 
 method new (IO::Path :$filename!) {
@@ -48,10 +46,11 @@ submethod BUILD (
   :$rows!,
   :$columns!,
 ) {
+
 	@!sym       = @sym.map( -> $label { Z::Cipher::Sym.new($label) });
 	$!sym-count = @sym.elems;
-	$!rows = $rows;
-	$!columns = $columns;
+	$!rows      = $rows;
+	$!columns   = $columns;
 
 	@!unigram   = self.gram(UNI);
 	@!bigram    = self.gram(BI);
@@ -59,10 +58,10 @@ submethod BUILD (
 	@!quadgram  = self.gram(QUAD);
 	@!quintgram = self.gram(QUINT);
 
-  #se.create-menu();
 	self!create-flowbox();
-  #self.create-statusbar();
-	#$*statusbar.push: $*statusbar.get-context-id(self), self.status;
+
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
+
 }
 
 method gist (Z::Cipher:D:) {
@@ -70,10 +69,9 @@ method gist (Z::Cipher:D:) {
 }
 
 method sym-count () { $!sym-count }
-method rows () { $!rows }
-method columns () { $!columns }
-method menu      () { $!menu }
-method flowbox   () { $!flowbox }
+method rows      () { $!rows      }
+method columns   () { $!columns   }
+method flowbox   () { $!flowbox   }
 
 
 
@@ -101,10 +99,10 @@ multi method gram (Z::Cipher:D: GRAM $g ) {
 }
 
 method status () {
-  "U:" ~ @!unigram.elems ~ " B:" ~ @!bigram.elems ~ " T:" ~ @!trigram.elems;
+  "U:" ~ +self.gram( UNI ) ~ " B:" ~ +self.gram( BI ) ~ " T:" ~ +self.gram( TRI );
 }
 
-multi method cmd ( $ where +FLIP_HORIZONTAL ) {
+multi method cmd ( FLIP_HORIZONTAL ) {
   say 'f';
   my @horizontal = $!flowbox.get-selected-children.map(*.get-index);
 
@@ -117,9 +115,10 @@ multi method cmd ( $ where +FLIP_HORIZONTAL ) {
 
 	%order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
 	True;
 }
-multi method cmd ( $ where +FLIP_VERTICAL ) {
+multi method cmd ( FLIP_VERTICAL ) {
   say 'F';
   my @vertical = $!flowbox.get-selected-children.map(*.get-index);
 
@@ -133,9 +132,10 @@ multi method cmd ( $ where +FLIP_VERTICAL ) {
 
   %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
-multi method cmd ( $ where +ROTATE_CLOCKWISE ) {
+multi method cmd ( ROTATE_CLOCKWISE ) {
   say 'r';
   my @clockwise = $!flowbox.get-selected-children.map(*.get-index);
 
@@ -146,16 +146,17 @@ multi method cmd ( $ where +ROTATE_CLOCKWISE ) {
     @fbc := @fbc.rotate: :clockwise;
   }
 
-  
+
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
 
   %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
-multi method cmd ( $ where +ROTATE_ANTICLOCKWISE ) {
+multi method cmd ( ROTATE_ANTICLOCKWISE ) {
   say 'R';
   my @anticlockwise = $!flowbox.get-selected-children.map(*.get-index);
 
@@ -172,11 +173,12 @@ multi method cmd ( $ where +ROTATE_ANTICLOCKWISE ) {
 
   %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
-multi method cmd ( $ where +TRANSPOSE ) {
-  say 'R';
+multi method cmd ( TRANSPOSE ) {
+  say 't';
   my @indices = $!flowbox.get-selected-children.map(*.get-index);
 
   if @indices {
@@ -191,59 +193,64 @@ multi method cmd ( $ where +TRANSPOSE ) {
 
   %order{ +.FlowBoxChild.p } = $++ for @fbc;
 	$!flowbox.invalidate-sort;
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
-multi method cmd ( $ where +MIRROR_HORIZONTAL ) {
+multi method cmd ( MIRROR_HORIZONTAL ) {
   say 'm';
-  say 'HFLIP';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
-multi method cmd ( $ where +MIRROR_VERTICAL ) {
+multi method cmd ( MIRROR_VERTICAL ) {
   say 'M';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
-multi method cmd ( $ where +ANGLE_CLOCKWISE ) {
+multi method cmd ( ANGLE_CLOCKWISE ) {
   say 'a';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
-multi method cmd ( $ where +ANGLE_ANTICLOCKWISE ) {
+multi method cmd ( ANGLE_ANTICLOCKWISE ) {
   say 'A';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
-multi method cmd ( $ where +CHANGE ) {
+multi method cmd ( CHANGE, $sym ) {
   say 'c';
-  $!flowbox.get-selected-children.map({ .get-child.sym.label = 'z' });
+  $!flowbox.get-selected-children.map({ .get-child.label = $sym });
+  $*statusbar.push: $*statusbar.get-context-id(self), self.status;
   True;
 }
 
 
-multi method cmd ( $ where +UNIGRAMS ) {
+multi method cmd ( UNIGRAMS ) {
   #say self.gram(UNI).elems;
   say $!flowbox.get-children();
   True;
 }
-multi method cmd ( $ where +BIGRAMS ) {
+multi method cmd ( BIGRAMS ) {
   say self.gram(BI).elems;
   True;
 }
-multi method cmd ( $ where +TRIGRAMS ) {
+multi method cmd ( TRIGRAMS ) {
   say self.gram(TRI).elems;
   True;
 }
-multi method cmd ( $ where +QUADGRAMS ) {
+multi method cmd ( QUADGRAMS ) {
   say self.gram(QUAD).elems;
   True;
 }
-multi method cmd ( $ where +QUINTGRAMS ) {
+multi method cmd ( QUINTGRAMS ) {
   say self.gram(QUINT).elems;
   True;
 }
@@ -255,7 +262,7 @@ method !create-flowbox () {
   $!flowbox.halign = GTK_ALIGN_START;
   $!flowbox.valign = GTK_ALIGN_START;
   $!flowbox.homogeneous = True;
-  
+
 	$!flowbox.set-sort-func(-> $c1, $c2, $ --> gint {
     CATCH { default { .message.say } }
     my gint $r = %order{ +$c1.p } <=> %order{ +$c2.p };
@@ -263,37 +270,95 @@ method !create-flowbox () {
   });
 
   $!flowbox.selection-mode = GTK_SELECTION_MULTIPLE;
-  
+
   for @!sym -> $sym {
     my $child = GTK::FlowBoxChild.new;
-     $child.add: $sym;
-     %order{ +$child.FlowBoxChild.p } = $++;
-     say $sym.label;
-     $!flowbox.add: $child;
+    $child.add: $sym;
+    %order{ +$child.FlowBoxChild.p } = $++;
+    $!flowbox.add: $child;
   }
-  
+
 
   @fbc = $!flowbox.get-children;
 
 	@fbc does Grid[:$!columns];
-  
+
   $!flowbox.min_children_per_line = @fbc.columns;
   $!flowbox.max_children_per_line = @fbc.columns;
 
-  
+
 	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
-  
+
+
   $!flowbox.key-press-event.tap( -> *@a {
-    my $cmd = cast(GdkEventKey, @a[1]).keyval;
-    self.cmd($cmd) if COMMAND($cmd);
+
+    my $key = cast(GdkEventKey, @a[1]).keyval;
+
+    self.handle-key: $key;
+
     @a[*-1].r = 0;
+
   });
+
+}
+
+submethod handle-key ( Int:D $key ) {
+
+  state $change = False;
+
+  given COMMAND( $key ) {
+
+    when $change {
+      self.cmd: CHANGE, $key.chr;
+      $change = False;
+    }
+
+    when FLIP_HORIZONTAL {
+      self.cmd: FLIP_HORIZONTAL;
+    }
+
+    when FLIP_VERTICAL {
+      self.cmd: FLIP_VERTICAL;
+    }
+
+    when ROTATE_CLOCKWISE {
+      self.cmd: ROTATE_CLOCKWISE;
+    }
+
+    when ROTATE_ANTICLOCKWISE {
+      self.cmd: ROTATE_ANTICLOCKWISE;
+    }
+
+    when TRANSPOSE {
+      self.cmd: TRANSPOSE;
+    }
+
+    when MIRROR_VERTICAL {
+      self.cmd: MIRROR_VERTICAL;
+    }
+
+    when MIRROR_HORIZONTAL {
+      self.cmd: MIRROR_HORIZONTAL;
+    }
+
+    when ANGLE_CLOCKWISE {
+      self.cmd: ANGLE_CLOCKWISE;
+    }
+
+    when ANGLE_CLOCKWISE {
+      self.cmd: ANGLE_CLOCKWISE;
+    }
+
+    when CHANGE {
+      $change = True;
+    }
+  }
 }
 
 #method create-statusbar () {
-  #  $!statusbar = GTK::Statusbar.new;
+#  $!statusbar = GTK::Statusbar.new;
 
-  #}
+#}
 
 
 

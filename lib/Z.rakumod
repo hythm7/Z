@@ -13,8 +13,6 @@ use GTK::FileChooserButton;
 
 #use Z::Util;
 use Z::Cipher;
-use Z::Cipher::File;
-
 
 enum WINDOW (
   MAIN   => 0,
@@ -27,13 +25,17 @@ unit class Z;
 
 submethod BUILD () {
 
+  my GTK::Statusbar $*statusbar     .= new;
 
-  self.activate.tap({ 
+  self.activate.tap({
     CATCH { default { .message.say; self.exit } }
 
     my $box = self.content(MAIN);
 
-    self.window.add($box);  
+
+    $box.pack_end($*statusbar);
+
+    self.window.add($box);
     self.window.destroy-signal.tap: { self.exit };
     self.show_all();
   });
@@ -43,39 +45,41 @@ submethod BUILD () {
 }
 
 multi method win ( CIPHER, :$filename ) {
+
+  say $*statusbar;
 	my $cipher = Z::Cipher.new(:$filename);
-  my $menu = $cipher.menu;
   my $flowbox = $cipher.flowbox;
-  
+
   my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
   my $box =  GTK::Box.new-vbox();
-  
-  #$box.pack_start($menu.menu);
+
   $box.pack_start($flowbox);
 
   $window.add($box);
-  
+
   $window.show_all();
   self.add_window: $window;
 }
 
 multi method content (MAIN) {
+
   GTK::CSSProvider.new.load-from-path('css/style.css');
-  # my GTK::MenuBar  $z-bar          .= new;
-  #my GTK::MenuItem $z-menu-item    .= new: :label<Z>;
-  #my GTK::MenuItem $quit-menu-item .= new: :label<Goodbye!>;
-  #my GTK::Menu     $z-menu         .= new;
+
+  my GTK::MenuBar   $z-bar          .= new;
+  my GTK::MenuItem  $z-menu-item    .= new: :label<Z>;
+  my GTK::MenuItem  $quit-menu-item .= new: :label<Goodbye!>;
+  my GTK::Menu      $z-menu         .= new;
 
   #$z-menu-item.set-sub-menu($z-menu);
-  #$z-menu.append($quit-menu-item);
-  #$z-bar.append($z-menu-item);
-  #$quit-menu-item.activate.tap: { self.exit }
+  $z-menu.append($quit-menu-item);
+  $z-bar.append($z-menu-item);
+  $quit-menu-item.activate.tap: { self.exit }
 
   my GTK::FileChooserButton $chooser .= new('Pick a cipher', GTK_FILE_CHOOSER_ACTION_OPEN);
   my GTK::Button $exit .= new_with_label: <Goodbye!>;
 
 
-  $chooser.selection-changed.tap: { self.win(CIPHER, :filename($chooser.filename.IO)) };
+  $chooser.selection-changed.tap: { self.win: CIPHER, :filename($chooser.filename.IO) };
   $exit.clicked.tap:     { self.exit };
 
 

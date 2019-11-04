@@ -1,10 +1,23 @@
 #!/usr/bin/env perl6
-use lib 'lib';
 
-use GTK::Button;
-use Z::Cipher;
-use Z::Cipher::File;
-use Z::Cipher::Sym;
-my $filename = 'cipher/z340'.IO;
+use GTK::Application;
+use GTK::FlowBox;
+use GTK::Label;
 
-my $c = Z::Cipher.new: :$filename;
+GTK::Application.new;
+
+my $str = q:to/END/;        # Reducing number of children by removing one line from $str fix the issue
+abcdefghijklmnopqrstuvwxyz
+abcdefghijklmnopqrstuvwxyz
+abcdefghijklmnopqrstuvwxyz
+abcdefghijklmnopqrstuvwxyz
+abcdefghijklmnopqrstuvwxyz
+abcdefghijklmnopqrstuvwxyz
+END
+
+my $flowbox = GTK::FlowBox.new;
+
+for $str.words.join.comb -> $sym {
+  $flowbox.add: GTK::Label.new: $sym;
+}
+
