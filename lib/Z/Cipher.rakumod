@@ -73,21 +73,8 @@ method rows      () { $!rows      }
 method columns   () { $!columns   }
 method flowbox   () { $!flowbox   }
 
-
-
-multi method gram (Z::Cipher:D: UNI $g ) {
-	my $b =  0;                 # back step
-  my $bag = @!sym.map(*.label).rotor($g => $b).map(*.join).Bag;
-
-	my @gram = gather for $bag.pairs {
-		.take;
-	}
-
-  @gram;
-}
-
-multi method gram (Z::Cipher:D: GRAM $g ) {
-	my $b = $g - ($g + $g - 1);                 # back step
+method gram (Z::Cipher:D: GRAM $g ) {
+	my $b =  1 - $g;  # back step
   my $bag = @!sym.map(*.label).rotor($g => $b).map(*.join).Bag;
 
 	#.say for $bag.pairs;
@@ -95,11 +82,16 @@ multi method gram (Z::Cipher:D: GRAM $g ) {
 		.take if .value > 1;
 	}
 
+  say @gram;
   @gram;
 }
 
 method status () {
-  "U:" ~ +self.gram( UNI ) ~ " B:" ~ +self.gram( BI ) ~ " T:" ~ +self.gram( TRI );
+  "U:" ~ +self.gram( UNI   ) ~ " " ~
+  "B:" ~ +self.gram( BI    ) ~ " " ~
+  "T:" ~ +self.gram( TRI   ) ~ " " ~
+  "Q:" ~ +self.gram( QUAD  ) ~ " " ~
+  "Q:" ~ +self.gram( QUINT );
 }
 
 multi method cmd ( FLIP_HORIZONTAL ) {
@@ -258,10 +250,12 @@ multi method cmd ( QUINTGRAMS ) {
 
 method !create-flowbox () {
 
-  $!flowbox = GTK::FlowBox.new;
-  $!flowbox.halign = GTK_ALIGN_START;
-  $!flowbox.valign = GTK_ALIGN_START;
-  $!flowbox.homogeneous = True;
+  $!flowbox                          = GTK::FlowBox.new;
+  $!flowbox.halign                   = GTK_ALIGN_START;
+  $!flowbox.valign                   = GTK_ALIGN_START;
+  $!flowbox.selection-mode           = GTK_SELECTION_MULTIPLE;
+  $!flowbox.activate-on-single-click = False;
+  $!flowbox.homogeneous              = True;
 
 	$!flowbox.set-sort-func(-> $c1, $c2, $ --> gint {
     CATCH { default { .message.say } }
@@ -269,7 +263,6 @@ method !create-flowbox () {
     $r;
   });
 
-  $!flowbox.selection-mode = GTK_SELECTION_MULTIPLE;
 
   for @!sym -> $sym {
     my $child = GTK::FlowBoxChild.new;

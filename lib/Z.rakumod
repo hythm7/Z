@@ -46,7 +46,6 @@ submethod BUILD () {
 
 multi method win ( CIPHER, :$filename ) {
 
-  say $*statusbar;
 	my $cipher = Z::Cipher.new(:$filename);
   my $flowbox = $cipher.flowbox;
 
