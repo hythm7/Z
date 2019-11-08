@@ -45,7 +45,10 @@ submethod BUILD () {
     my GTK::Button $exit .= new_with_label: <Goodbye!>;
 
 
-    $chooser.selection-changed.tap: { self.win: CIPHER, :filename($chooser.filename.IO) };
+    $chooser.selection-changed.tap: {
+      self.add-window: Z::Cipher.new( filename => $chooser.filename.IO).window;
+    };
+
     $exit.clicked.tap:     { self.exit };
 
 
@@ -60,27 +63,5 @@ submethod BUILD () {
 
   });
 
-
   self.run;
-}
-
-multi method win ( CIPHER, :$filename ) {
-
-  my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
-
-  my GTK::Statusbar            $*statusbar .= new;
-  my GTK::Dialog::ColorChooser $*colorbox  .= new: 'Choose color', $window;
-
-	my $cipher = Z::Cipher.new( :$filename );
-  my $flowbox = $cipher.flowbox;
-
-  my $box =  GTK::Box.new-vbox( );
-
-  $box.pack_start( $flowbox );
-  $box.pack_end( $*statusbar );
-
-  $window.add( $box );
-
-  $window.show_all( );
-  self.add_window: $window;
 }

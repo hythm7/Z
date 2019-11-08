@@ -2,8 +2,11 @@ use Grid;
 use GTK::Raw::Types;
 use GTK::Compat::Types;
 use GTK::Utils::MenuBuilder;
+use GTK::Window;
 use GTK::FlowBox;
 use GTK::FlowBoxChild;
+use GTK::Statusbar;
+use GTK::Dialog::ColorChooser;
 use Z::Cipher::Util;
 use Z::Cipher::Sym;
 
@@ -13,8 +16,10 @@ unit class Z::Cipher;
 has @!sym;
 has %!order;
 
-has GTK::FlowBox   $!flowbox;
-
+has GTK::Window               $!window;
+has GTK::FlowBox              $!flowbox;
+has GTK::Statusbar            $!statusbar;
+has GTK::Dialog::ColorChooser $!colorbox;
 
 method new (IO::Path :$filename!) {
 
@@ -39,7 +44,7 @@ submethod BUILD (
 
 ) {
 
-
+  $!window = GTK::Window.new: GTK_WINDOW_TOPLEVEL, :title<Cipher>;
 
   $!flowbox                          = GTK::FlowBox.new;
   $!flowbox.halign                   = GTK_ALIGN_START;
@@ -89,11 +94,24 @@ submethod BUILD (
 
   } );
 
-  #$*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+
+  $!statusbar = GTK::Statusbar.new;
+  $!colorbox  = GTK::Dialog::ColorChooser.new: 'Choose color', $!window;
+
+  my $box = GTK::Box.new-vbox( );
+
+  $box.pack_start( $!flowbox );
+  $box.pack_end( $!statusbar );
+
+  $!window.add( $box );
+
+  $!window.show_all( );
+
+  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
 
 }
 
-method flowbox ( ) { $!flowbox   }
+method window ( ) { $!window   }
 
 method gram (Z::Cipher:D: GRAM $g ) {
 	my $b =  1 - $g;  # back step
@@ -128,7 +146,7 @@ multi method cmd ( FLIP_HORIZONTAL ) {
 
 	%!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  #$*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
 	True;
 }
 multi method cmd ( FLIP_VERTICAL ) {
@@ -145,7 +163,7 @@ multi method cmd ( FLIP_VERTICAL ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
   True;
 }
 multi method cmd ( ROTATE_CLOCKWISE ) {
@@ -165,7 +183,7 @@ multi method cmd ( ROTATE_CLOCKWISE ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
   True;
 }
 
@@ -186,7 +204,7 @@ multi method cmd ( ROTATE_ANTICLOCKWISE ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
   True;
 }
 
@@ -206,53 +224,60 @@ multi method cmd ( TRANSPOSE ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( MIRROR_HORIZONTAL ) {
   say 'm';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
-  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( MIRROR_VERTICAL ) {
   say 'M';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( ANGLE_CLOCKWISE ) {
   say 'a';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
-  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( ANGLE_ANTICLOCKWISE ) {
   say 'A';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( COLOR ) {
   say 'c';
 
-  $*colorbox.run;
+  $!colorbox.run;
 
+  my $color = $!colorbox.rgba;
+  say $color;
 
-  my @child = $!flowbox.get-selected-children;
-  #$*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  #my $css = GTK::CSSProvider.new;
+  #my $css-s = "#box \{ background-color: { $color.to_string }; \}";
+
+  #$css.load_from_data($css-s);
+
+  #my @child = $!flowbox.get-selected-children;
+  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
   True;
 }
 
 multi method cmd ( SUBSTITUTE, $sym ) {
   say 's';
   $!flowbox.get-selected-children.map({ .get-child.label = $sym });
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
   True;
 }
 
