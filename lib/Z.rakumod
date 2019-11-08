@@ -9,9 +9,9 @@ use GTK::Statusbar;
 #use GTK::Menu;
 use GTK::Grid;
 use GTK::Button;
-use GTK::FileChooserButton;
+use GTK::FileChooserButton; # convert to dialog, "o" to open
+use GTK::Dialog::ColorChooser;
 
-#use Z::Util;
 use Z::Cipher;
 
 enum WINDOW (
@@ -20,24 +20,44 @@ enum WINDOW (
 );
 
 unit class Z;
-#  also does Z::Util;
   also is GTK::Application;
 
 submethod BUILD () {
 
-  my GTK::Statusbar $*statusbar     .= new;
 
   self.activate.tap({
+
     CATCH { default { .message.say; self.exit } }
 
-    my $box = self.content(MAIN);
+    GTK::CSSProvider.new.load-from-path('css/style.css');
+
+    # my GTK::MenuBar   $z-bar          .= new;
+    # my GTK::MenuItem  $z-menu-item    .= new: :label<Z>;
+    # my GTK::MenuItem  $quit-menu-item .= new: :label<Goodbye!>;
+    # my GTK::Menu      $z-menu         .= new;
+    #
+    # # $z-menu-item.set-sub-menu($z-menu);
+    # $z-menu.append($quit-menu-item);
+    # $z-bar.append($z-menu-item);
+    # $quit-menu-item.activate.tap: { self.exit }
+
+    my GTK::FileChooserButton $chooser .= new('Pick a cipher', GTK_FILE_CHOOSER_ACTION_OPEN);
+    my GTK::Button $exit .= new_with_label: <Goodbye!>;
 
 
-    $box.pack_end($*statusbar);
+    $chooser.selection-changed.tap: { self.win: CIPHER, :filename($chooser.filename.IO) };
+    $exit.clicked.tap:     { self.exit };
+
+
+    my $box = GTK::Box.new-vbox();
+
+    $box.pack_start($chooser);
+    $box.pack_start($exit);
 
     self.window.add($box);
     self.window.destroy-signal.tap: { self.exit };
     self.show_all();
+
   });
 
 
@@ -46,46 +66,21 @@ submethod BUILD () {
 
 multi method win ( CIPHER, :$filename ) {
 
-	my $cipher = Z::Cipher.new(:$filename);
+  my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
+
+  my GTK::Statusbar            $*statusbar .= new;
+  my GTK::Dialog::ColorChooser $*colorbox  .= new: 'Choose color', $window;
+
+	my $cipher = Z::Cipher.new( :$filename );
   my $flowbox = $cipher.flowbox;
 
-  my GTK::Window $window      .= new: GTK_WINDOW_TOPLEVEL, :title($filename.basename);
-  my $box =  GTK::Box.new-vbox();
+  my $box =  GTK::Box.new-vbox( );
 
-  $box.pack_start($flowbox);
+  $box.pack_start( $flowbox );
+  $box.pack_end( $*statusbar );
 
-  $window.add($box);
+  $window.add( $box );
 
-  $window.show_all();
+  $window.show_all( );
   self.add_window: $window;
 }
-
-multi method content (MAIN) {
-
-  GTK::CSSProvider.new.load-from-path('css/style.css');
-
-  my GTK::MenuBar   $z-bar          .= new;
-  my GTK::MenuItem  $z-menu-item    .= new: :label<Z>;
-  my GTK::MenuItem  $quit-menu-item .= new: :label<Goodbye!>;
-  my GTK::Menu      $z-menu         .= new;
-
-  #$z-menu-item.set-sub-menu($z-menu);
-  $z-menu.append($quit-menu-item);
-  $z-bar.append($z-menu-item);
-  $quit-menu-item.activate.tap: { self.exit }
-
-  my GTK::FileChooserButton $chooser .= new('Pick a cipher', GTK_FILE_CHOOSER_ACTION_OPEN);
-  my GTK::Button $exit .= new_with_label: <Goodbye!>;
-
-
-  $chooser.selection-changed.tap: { self.win: CIPHER, :filename($chooser.filename.IO) };
-  $exit.clicked.tap:     { self.exit };
-
-
-  my $box = GTK::Box.new-vbox();
-  $box.pack_start($chooser);
-  $box.pack_start($exit);
-
-  $box;
-}
-

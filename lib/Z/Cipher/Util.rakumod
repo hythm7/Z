@@ -1,7 +1,7 @@
 unit module Z::Cipher::Util;
 
 enum COMMAND is export (
-  FLIP_VERTICAL         => 70,
+  FLIP_VERTICAL        => 70,
   FLIP_HORIZONTAL      => 102,
   ROTATE_ANTICLOCKWISE => 82,
   ROTATE_CLOCKWISE     => 114,
@@ -10,7 +10,8 @@ enum COMMAND is export (
   MIRROR_HORIZONTAL    => 109,
   ANGLE_CLOCKWISE      => 65,
   ANGLE_ANTICLOCKWISE  => 97,
-  CHANGE               => 99,
+  SUBSTITUTE           => 115,
+  COLOR                => 99,
   UNIGRAMS             => 49,
   BIGRAMS              => 50,
   TRIGRAMS             => 51,

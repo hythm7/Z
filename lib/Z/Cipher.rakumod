@@ -4,12 +4,9 @@ use GTK::Compat::Types;
 use GTK::Utils::MenuBuilder;
 use GTK::FlowBox;
 use GTK::FlowBoxChild;
-use GTK::Statusbar;
 use Z::Cipher::Util;
 use Z::Cipher::Sym;
 
-
-# hack till .flwoboxchild.deref works
 
 unit class Z::Cipher;
 
@@ -17,11 +14,12 @@ has @!sym;
 has %!order;
 
 has GTK::FlowBox   $!flowbox;
-has GTK::Statusbar $!statusbar;
 
 
 method new (IO::Path :$filename!) {
+
 	my $file = slurp $filename;
+
 	return Nil unless [==] (.chars for $file.lines);
 
 	my $rows    = $file.lines.elems;
@@ -30,13 +28,17 @@ method new (IO::Path :$filename!) {
 	my @sym = $file.comb: /\N/;
 
 	self.bless(:@sym, :$rows, :$columns);
+
 }
 
 submethod BUILD (
+
   :@sym!,
   :$rows!,
   :$columns!,
+
 ) {
+
 
 
   $!flowbox                          = GTK::FlowBox.new;
@@ -69,7 +71,6 @@ submethod BUILD (
 
 	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
 
-
   $!flowbox.key-press-event.tap( -> *@a {
 
     my $key = cast(GdkEventKey, @a[1]).keyval;
@@ -79,6 +80,14 @@ submethod BUILD (
     @a[*-1].r = 0;
 
   });
+
+  $!flowbox.child-activated.tap( -> @ {
+    my $sym   = $!flowbox.get-selected-children.head.get-child.label;
+    my @child = $!flowbox.get-children.grep({ .get-child.label ~~ $sym });
+
+    @child.map( -> $child { $!flowbox.select-child: $child } );
+
+  } );
 
   #$*statusbar.push: $*statusbar.get-context-id(self), self.grams;
 
@@ -93,7 +102,7 @@ method gram (Z::Cipher:D: GRAM $g ) {
 
 		.take if .value > 1;
 
-	}
+  }
 }
 
 method grams () {
@@ -197,40 +206,51 @@ multi method cmd ( TRANSPOSE ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( MIRROR_HORIZONTAL ) {
   say 'm';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( MIRROR_VERTICAL ) {
   say 'M';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( ANGLE_CLOCKWISE ) {
   say 'a';
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
   True;
 }
 
 multi method cmd ( ANGLE_ANTICLOCKWISE ) {
   say 'A';
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  $*statusbar.push: $*statusbar.get-context-id( self ), self.grams;
   True;
 }
 
-multi method cmd ( CHANGE, $sym ) {
+multi method cmd ( COLOR ) {
   say 'c';
+
+  $*colorbox.run;
+
+
+  my @child = $!flowbox.get-selected-children;
+  #$*statusbar.push: $*statusbar.get-context-id(self), self.grams;
+  True;
+}
+
+multi method cmd ( SUBSTITUTE, $sym ) {
+  say 's';
   $!flowbox.get-selected-children.map({ .get-child.label = $sym });
   $*statusbar.push: $*statusbar.get-context-id(self), self.grams;
   True;
@@ -242,18 +262,22 @@ multi method cmd ( UNIGRAMS ) {
   say $!flowbox.get-children();
   True;
 }
+
 multi method cmd ( BIGRAMS ) {
   say self.gram(BI).elems;
   True;
 }
+
 multi method cmd ( TRIGRAMS ) {
   say self.gram(TRI).elems;
   True;
 }
+
 multi method cmd ( QUADGRAMS ) {
   say self.gram(QUAD).elems;
   True;
 }
+
 multi method cmd ( QUINTGRAMS ) {
   say self.gram(QUINT).elems;
   True;
@@ -267,7 +291,7 @@ submethod handle-key ( Int:D $key ) {
   given COMMAND( $key ) {
 
     when $change {
-      self.cmd: CHANGE, $key.chr;
+      self.cmd: SUBSTITUTE, $key.chr;
       $change = False;
     }
 
@@ -307,16 +331,14 @@ submethod handle-key ( Int:D $key ) {
       self.cmd: ANGLE_CLOCKWISE;
     }
 
-    when CHANGE {
+    when COLOR {
+      self.cmd: COLOR;
+    }
+
+    when SUBSTITUTE {
       $change = True;
     }
+
   }
 }
-
-#method create-statusbar () {
-#  $!statusbar = GTK::Statusbar.new;
-
-#}
-
-
 
