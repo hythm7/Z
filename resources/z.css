@@ -1,0 +1,21 @@
+flowbox {
+  background-color: black;
+  color: white
+} 
+
+#sym {
+  font-family: Untitled2;
+  font-size:   42px;
+}
+
+button {
+  border-width: 5px;
+  border-color: #333333;
+  border-radius: 10px;
+  margin: 10px;
+  font-family: Untitled2;
+}
+
+button:hover {
+  background: #1166ff;
+}

@@ -36,6 +36,7 @@ method new (IO::Path :$filename!) {
 
 }
 
+
 submethod BUILD (
 
   :@sym!,
@@ -52,6 +53,7 @@ submethod BUILD (
   $!flowbox.selection-mode           = GTK_SELECTION_MULTIPLE;
   $!flowbox.activate-on-single-click = False;
   $!flowbox.homogeneous              = True;
+  $!flowbox.name = 'cipher';
 
   for @sym -> $sym {
     my $child = GTK::FlowBoxChild.new;
@@ -205,6 +207,7 @@ multi method cmd ( ROTATE_ANTICLOCKWISE ) {
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
   $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
+
   True;
 }
 
@@ -262,19 +265,24 @@ multi method cmd ( COLOR ) {
   $!colorbox.run;
 
   my $color = $!colorbox.rgba;
-  say $color;
+
+  my @child = $!flowbox.get-selected-children;
+
+  @child.map( *.get-child.override-color: GTK_STATE_FLAG_NORMAL, $color );
+
+  
 
   #my $css = GTK::CSSProvider.new;
   #my $css-s = "#box \{ background-color: { $color.to_string }; \}";
 
   #$css.load_from_data($css-s);
 
-  #my @child = $!flowbox.get-selected-children;
-  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
   True;
 }
 
 multi method cmd ( SUBSTITUTE, $sym ) {
+  # BUG: column spacing become wide after
   say 's';
   $!flowbox.get-selected-children.map({ .get-child.label = $sym });
   $!statusbar.push: $!statusbar.get-context-id(self), self.grams;

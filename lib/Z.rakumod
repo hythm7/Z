@@ -29,7 +29,7 @@ submethod BUILD () {
 
     CATCH { default { .message.say; self.exit } }
 
-    GTK::CSSProvider.new.load-from-path('css/style.css');
+    GTK::CSSProvider.new.load-from-path(%?RESOURCES<z.css>);
 
     # my GTK::MenuBar   $z-bar          .= new;
     # my GTK::MenuItem  $z-menu-item    .= new: :label<Z>;

@@ -1,0 +1,25 @@
+{
+    "perl" : "6.*",
+    "api" : "*",
+    "name" : "Z",
+    "auth" : "github:hythm7",
+    "version" : "0.0.1",
+    "description" : "z340 cipher visualizer.",
+    "authors" : [ "Haytham Elganiny" ],
+    "license" : "Artistic-2.0",
+    "provides" : {
+        "Grid" : "lib/Z.pm"
+    },
+    "depends" : [ ],
+    "build-depends" : [ ],
+    "test-depends" : [ ],
+    "resources" : [
+      "z.css"
+    ],
+   "tags": [
+      "Z340",
+      "cipher",
+      "Zodiac"
+   ],
+    "source-url" : "https://github.com/hythm7/Z.git"
+}
