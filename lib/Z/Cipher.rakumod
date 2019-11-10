@@ -1,6 +1,7 @@
 use Grid;
 use GTK::Raw::Types;
 use GTK::Compat::Types;
+use GTK::Compat::KeySyms;
 use GTK::Utils::MenuBuilder;
 use GTK::Window;
 use GTK::FlowBox;
@@ -140,8 +141,8 @@ method grams ( ) {
 
 }
 
-multi method cmd ( FLIP_HORIZONTAL ) {
-  say 'f';
+method flip-horizontal ( ) {
+
   my @horizontal = $!flowbox.get-selected-children.map(*.get-index);
 
   if @horizontal {
@@ -156,8 +157,9 @@ multi method cmd ( FLIP_HORIZONTAL ) {
   #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
 	True;
 }
-multi method cmd ( FLIP_VERTICAL ) {
-  say 'F';
+
+method flip-vertical ( ) {
+
   my @vertical = $!flowbox.get-selected-children.map(*.get-index);
 
   if @vertical {
@@ -173,8 +175,9 @@ multi method cmd ( FLIP_VERTICAL ) {
   $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
   True;
 }
-multi method cmd ( ROTATE_CLOCKWISE ) {
-  say 'r';
+
+method rotate-clockwise ( ) {
+
   my @clockwise = $!flowbox.get-selected-children.map(*.get-index);
 
   if @clockwise {
@@ -194,8 +197,8 @@ multi method cmd ( ROTATE_CLOCKWISE ) {
   True;
 }
 
-multi method cmd ( ROTATE_ANTICLOCKWISE ) {
-  say 'R';
+method rotate-anticlockwise ( ) {
+
   my @anticlockwise = $!flowbox.get-selected-children.map(*.get-index);
 
   if @anticlockwise {
@@ -216,8 +219,8 @@ multi method cmd ( ROTATE_ANTICLOCKWISE ) {
   True;
 }
 
-multi method cmd ( TRANSPOSE ) {
-  say 't';
+method transpose ( ) {
+
   my @indices = $!flowbox.get-selected-children.map(*.get-index);
 
   if @indices {
@@ -236,36 +239,35 @@ multi method cmd ( TRANSPOSE ) {
   True;
 }
 
-multi method cmd ( MIRROR_HORIZONTAL ) {
-  say 'm';
+method mirror-horizontal ( ) {
+
+  $!flowbox.get-selected-children.map(*.get-child.angle += 90);
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
+  True;
+}
+
+method mirror-vertical ( ) {
+
+  $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
+  True;
+}
+
+method angle-clockwise ( ) {
+
   say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
   $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
   True;
 }
 
-multi method cmd ( MIRROR_VERTICAL ) {
-  say 'M';
+method angle-anticlockwise ( ) {
+
   say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
   $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
   True;
 }
 
-multi method cmd ( ANGLE_CLOCKWISE ) {
-  say 'a';
-  say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
-  True;
-}
-
-multi method cmd ( ANGLE_ANTICLOCKWISE ) {
-  say 'A';
-  say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
-  True;
-}
-
-multi method cmd ( COLOR ) {
-  say 'c';
+method color ( ) {
 
   $!colorbox.run;
 
@@ -286,14 +288,13 @@ multi method cmd ( COLOR ) {
   True;
 }
 
-multi method cmd ( YANK ) {
-  say 'y';
+method yank ( ) {
+
   @*yanked = $!flowbox.get-selected-children.map({ .get-child.label });
   True;
 }
 
-multi method cmd ( PASTE ) {
-  say 'p';
+method paste ( ) {
 
   my $index = $!flowbox.get-selected-children.first.get-index;
 
@@ -342,55 +343,55 @@ submethod handle-key ( Int:D $key ) {
 
   state @*yanked;
 
-  given COMMAND( $key ) {
+  given $key {
 
 
-    when FLIP_HORIZONTAL {
-      self.cmd: FLIP_HORIZONTAL;
+    when GDK_KEY_f {
+      self.flip-horizontal;
     }
 
-    when FLIP_VERTICAL {
-      self.cmd: FLIP_VERTICAL;
+    when GDK_KEY_F {
+      self.flip-vertical;
     }
 
-    when ROTATE_CLOCKWISE {
-      self.cmd: ROTATE_CLOCKWISE;
+    when GDK_KEY_r {
+      self.rotate-clockwise;
     }
 
-    when ROTATE_ANTICLOCKWISE {
-      self.cmd: ROTATE_ANTICLOCKWISE;
+    when GDK_KEY_R {
+      self.rotate-anticlockwise;
     }
 
-    when TRANSPOSE {
-      self.cmd: TRANSPOSE;
+    when GDK_KEY_t {
+      self.transpose;
     }
 
-    when MIRROR_VERTICAL {
-      self.cmd: MIRROR_VERTICAL;
+    when GDK_KEY_m {
+      self.mirror-horizontal;
     }
 
-    when MIRROR_HORIZONTAL {
-      self.cmd: MIRROR_HORIZONTAL;
+    when GDK_KEY_M {
+      self.mirror-vertical;
     }
 
-    when ANGLE_CLOCKWISE {
-      self.cmd: ANGLE_CLOCKWISE;
+    when GDK_KEY_a {
+      self.angle-clockwise;
     }
 
-    when ANGLE_CLOCKWISE {
-      self.cmd: ANGLE_CLOCKWISE;
+    when GDK_KEY_A {
+      self.angle-anticlockwise;
     }
 
-    when COLOR {
-      self.cmd: COLOR;
+    when GDK_KEY_c {
+      self.color;
     }
 
-    when YANK {
-      self.cmd: YANK;
+    when GDK_KEY_y {
+      self.yank;
     }
 
-    when PASTE {
-      self.cmd: PASTE;
+    when GDK_KEY_p {
+      self.paste;
     }
 
   }
