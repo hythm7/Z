@@ -1,3 +1,4 @@
+
 flowbox {
   background-color: black;
   color: white
@@ -6,6 +7,19 @@ flowbox {
 #sym {
   font-family: Untitled2;
   font-size:   42px;
+}
+
+statusbar {
+  background-color: black;
+  color: green;
+  margin: 0px;
+}
+
+*:selected {
+  background-color: black;
+  color: transparent;
+  /* text-shadow: 0 0 4px rgba(17,42,242,.9); */
+  text-shadow: 0 0 4px rgba(242,242,242,.9);
 }
 
 button {

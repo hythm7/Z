@@ -15,6 +15,7 @@ unit class Z::Cipher;
 
 has @!sym;
 has %!order;
+has $!grams;
 
 has GTK::Window               $!window;
 has GTK::FlowBox              $!flowbox;
@@ -94,10 +95,13 @@ submethod BUILD (
 
     @child.map( -> $child { $!flowbox.select-child: $child } );
 
+    $!statusbar.push: $!statusbar.get-context-id(self), "$sym { +@child}";
+
   } );
 
 
   $!statusbar = GTK::Statusbar.new;
+  $!statusbar.margin = 0;
   $!colorbox  = GTK::Dialog::ColorChooser.new: 'Choose color', $!window;
 
   my $box = GTK::Box.new-vbox( );
@@ -116,6 +120,7 @@ submethod BUILD (
 method window ( ) { $!window   }
 
 method gram (Z::Cipher:D: GRAM $g ) {
+
 	my $b =  1 - $g;  # back step
 
   gather for @!sym.map( *.get-child.label ).rotor($g => $b).map(*.join).Bag.pairs {
@@ -125,7 +130,7 @@ method gram (Z::Cipher:D: GRAM $g ) {
   }
 }
 
-method grams () {
+method grams ( ) {
 
   "U:" ~ +self.gram( UNI   ) ~ " " ~
   "B:" ~ +self.gram( BI    ) ~ " " ~
@@ -281,11 +286,27 @@ multi method cmd ( COLOR ) {
   True;
 }
 
-multi method cmd ( SUBSTITUTE, $sym ) {
-  # BUG: column spacing become wide after
-  say 's';
-  $!flowbox.get-selected-children.map({ .get-child.label = $sym });
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
+multi method cmd ( YANK ) {
+  say 'y';
+  @*yanked = $!flowbox.get-selected-children.map({ .get-child.label });
+  True;
+}
+
+multi method cmd ( PASTE ) {
+  say 'p';
+
+  my $index = $!flowbox.get-selected-children.first.get-index;
+
+  my @indices = $index X+ ^@*yanked.elems;
+
+  return if @indices.tail > @!sym.end;
+
+  for @indices Z @*yanked -> ( $index, $sym ) {
+
+    $!flowbox.get-child-at-index( $index ).get-child.label = $sym;
+
+  }
+
   True;
 }
 
@@ -319,14 +340,10 @@ multi method cmd ( QUINTGRAMS ) {
 
 submethod handle-key ( Int:D $key ) {
 
-  state $change = False;
+  state @*yanked;
 
   given COMMAND( $key ) {
 
-    when $change {
-      self.cmd: SUBSTITUTE, $key.chr;
-      $change = False;
-    }
 
     when FLIP_HORIZONTAL {
       self.cmd: FLIP_HORIZONTAL;
@@ -368,8 +385,12 @@ submethod handle-key ( Int:D $key ) {
       self.cmd: COLOR;
     }
 
-    when SUBSTITUTE {
-      $change = True;
+    when YANK {
+      self.cmd: YANK;
+    }
+
+    when PASTE {
+      self.cmd: PASTE;
     }
 
   }
