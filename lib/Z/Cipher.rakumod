@@ -16,7 +16,6 @@ unit class Z::Cipher;
 
 has @!sym;
 has %!order;
-has $!grams;
 
 has GTK::Window               $!window;
 has GTK::FlowBox              $!flowbox;
@@ -77,16 +76,13 @@ submethod BUILD (
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
 
-
 	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
 
   $!flowbox.key-press-event.tap( -> *@a {
 
     my $key = cast(GdkEventKey, @a[1]).keyval;
 
-    self.handle-key: $key;
-
-    @a[*-1].r = 0;
+    @a[*-1].r = self.handle-key: $key;
 
   });
 
@@ -120,24 +116,28 @@ submethod BUILD (
 
 method window ( ) { $!window   }
 
-method gram (Z::Cipher:D: GRAM $g ) {
+method gram ( Z::Cipher:D: Int:D $gram ) {
 
-	my $b =  1 - $g;  # back step
+	my $back =  1 - $gram;  # back step
 
-  gather for @!sym.map( *.get-child.label ).rotor($g => $b).map(*.join).Bag.pairs {
+  gather for @!sym.map( *.get-child.label ).rotor($gram => $back).map(*.join).Bag.pairs {
 
 		.take if .value > 1;
 
   }
 }
 
-method grams ( ) {
+method grams ( :$gram = 1 ) {
 
-  "U:" ~ +self.gram( UNI   ) ~ " " ~
-  "B:" ~ +self.gram( BI    ) ~ " " ~
-  "T:" ~ +self.gram( TRI   ) ~ " " ~
-  "Q:" ~ +self.gram( QUAD  ) ~ " " ~
-  "Q:" ~ +self.gram( QUINT );
+  state @grams;
+
+  my @result = self.gram: $gram;
+
+  return @grams unless @result;
+
+  @grams.push: @result;
+
+  self.grams: :gram( $gram + 1 );
 
 }
 
@@ -155,6 +155,7 @@ method flip-horizontal ( ) {
 	%!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
   #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
+  say @!sym.map( *.get-child.label );
 	True;
 }
 
@@ -172,7 +173,7 @@ method flip-vertical ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
   True;
 }
 
@@ -277,7 +278,7 @@ method color ( ) {
 
   @child.map( *.get-child.override-color: GTK_STATE_FLAG_NORMAL, $color );
 
-  
+
 
   #my $css = GTK::CSSProvider.new;
   #my $css-s = "#box \{ background-color: { $color.to_string }; \}";
@@ -321,7 +322,7 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
    # WORKAROUND: Convert $x, $y to $index, till p6GtkPlus #43 resolved
    my $index = $x + ( $y * @!sym.columns );
- 
+
    return unless 0 ≤ $index ≤ @!sym.end;
 
    my $child =  $!flowbox.get-child-at-index( $index );
@@ -331,33 +332,6 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
  }
 
 }
-
-multi method cmd ( UNIGRAMS ) {
-  #say self.gram(UNI).elems;
-  say $!flowbox.get-children();
-  True;
-}
-
-multi method cmd ( BIGRAMS ) {
-  say self.gram(BI).elems;
-  True;
-}
-
-multi method cmd ( TRIGRAMS ) {
-  say self.gram(TRI).elems;
-  True;
-}
-
-multi method cmd ( QUADGRAMS ) {
-  say self.gram(QUAD).elems;
-  True;
-}
-
-multi method cmd ( QUINTGRAMS ) {
-  say self.gram(QUINT).elems;
-  True;
-}
-
 
 submethod handle-key ( Int:D $key ) {
 
@@ -376,7 +350,7 @@ submethod handle-key ( Int:D $key ) {
 
       $visual = not $visual;
 
-      return unless $visual;
+      return True unless $visual;
 
       my $index   = $!flowbox.get-selected-children.first.get-index;
 
@@ -393,54 +367,79 @@ submethod handle-key ( Int:D $key ) {
       $current-x = $start-x;
       $current-y = $start-y;
 
+      True;
     }
 
     when GDK_KEY_f {
       self.flip-horizontal;
+
+      True;
     }
 
     when GDK_KEY_F {
       self.flip-vertical;
+
+      True;
     }
 
     when GDK_KEY_r {
       self.rotate-clockwise;
+
+      True;
     }
 
     when GDK_KEY_R {
       self.rotate-anticlockwise;
+
+      True;
     }
 
     when GDK_KEY_t {
       self.transpose;
+
+      True;
     }
 
     when GDK_KEY_m {
       self.mirror-horizontal;
+
+      True;
     }
 
     when GDK_KEY_M {
       self.mirror-vertical;
+
+      True;
     }
 
     when GDK_KEY_a {
       self.angle-clockwise;
+
+      True;
     }
 
     when GDK_KEY_A {
       self.angle-anticlockwise;
+
+      True;
     }
 
     when GDK_KEY_c {
       self.color;
+
+      True;
     }
 
     when GDK_KEY_y {
       self.yank;
+
+      True;
     }
 
     when GDK_KEY_p {
       self.paste;
+
+      True;
     }
 
     when GDK_KEY_k {
@@ -448,6 +447,8 @@ submethod handle-key ( Int:D $key ) {
         $current-y -= 1 if $current-y > 0;
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
+
+      True;
     }
 
     when GDK_KEY_j {
@@ -455,6 +456,8 @@ submethod handle-key ( Int:D $key ) {
         $current-y += 1 if $current-y < @!sym.rows - 1;
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
+
+      True;
     }
 
     when GDK_KEY_h {
@@ -462,6 +465,8 @@ submethod handle-key ( Int:D $key ) {
         $current-x -= 1 if $current-x > 0;
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
+
+      True;
     }
 
     when GDK_KEY_l {
@@ -469,7 +474,14 @@ submethod handle-key ( Int:D $key ) {
         $current-x += 1 if $current-x < @!sym.columns - 1;
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
+
+      True;
     }
+
+    default {
+      False;
+    }
+
 
   }
 }
