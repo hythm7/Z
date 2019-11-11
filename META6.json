@@ -10,16 +10,18 @@
     "provides" : {
         "Grid" : "lib/Z.pm"
     },
-    "depends" : [ ],
+    "depends" : [
+      "Grid"
+    ],
     "build-depends" : [ ],
     "test-depends" : [ ],
     "resources" : [
       "z.css"
     ],
    "tags": [
-      "Z340",
+      "z340",
       "cipher",
-      "Zodiac"
+      "zodiac"
    ],
     "source-url" : "https://github.com/hythm7/Z.git"
 }

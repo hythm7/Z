@@ -312,6 +312,26 @@ method paste ( ) {
 }
 
 
+method visual ( $start-x, $start-y, $current-x, $current-y ) {
+
+  #say $!flowbox.get-child-at-pos( 0, 0 ).get-child.WHAT;
+
+  $!flowbox.unselect-all;
+  for ( $start-x ... $current-x ) X ( $start-y ... $current-y ) -> ( $x, $y ) {
+
+   # WORKAROUND: Convert $x, $y to $index, till p6GtkPlus #43 resolved
+   my $index = $x + ( $y * @!sym.columns );
+ 
+   return unless 0 ≤ $index ≤ @!sym.end;
+
+   my $child =  $!flowbox.get-child-at-index( $index );
+
+   $!flowbox.select-child( $child );
+
+ }
+
+}
+
 multi method cmd ( UNIGRAMS ) {
   #say self.gram(UNI).elems;
   say $!flowbox.get-children();
@@ -341,10 +361,39 @@ multi method cmd ( QUINTGRAMS ) {
 
 submethod handle-key ( Int:D $key ) {
 
+  state $visual = False;
+  state $start-x;
+  state $start-y;
+  state $current-x;
+  state $current-y;
+
   state @*yanked;
 
   given $key {
 
+
+    when GDK_KEY_v {
+
+      $visual = not $visual;
+
+      return unless $visual;
+
+      my $index   = $!flowbox.get-selected-children.first.get-index;
+
+      if $index ~~ 0 {
+        $start-x = 0;
+        $start-y = 0;
+      }
+
+      else {
+        $start-x = $index mod @!sym.columns;
+        $start-y = $index div @!sym.columns;
+      }
+
+      $current-x = $start-x;
+      $current-y = $start-y;
+
+    }
 
     when GDK_KEY_f {
       self.flip-horizontal;
@@ -392,6 +441,34 @@ submethod handle-key ( Int:D $key ) {
 
     when GDK_KEY_p {
       self.paste;
+    }
+
+    when GDK_KEY_k {
+      if $visual {
+        $current-y -= 1 if $current-y > 0;
+        self.visual: $start-x, $start-y, $current-x, $current-y;
+      }
+    }
+
+    when GDK_KEY_j {
+      if $visual {
+        $current-y += 1 if $current-y < @!sym.rows - 1;
+        self.visual: $start-x, $start-y, $current-x, $current-y;
+      }
+    }
+
+    when GDK_KEY_h {
+      if $visual {
+        $current-x -= 1 if $current-x > 0;
+        self.visual: $start-x, $start-y, $current-x, $current-y;
+      }
+    }
+
+    when GDK_KEY_l {
+      if $visual {
+        $current-x += 1 if $current-x < @!sym.columns - 1;
+        self.visual: $start-x, $start-y, $current-x, $current-y;
+      }
     }
 
   }
