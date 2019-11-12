@@ -306,6 +306,14 @@ method paste ( ) {
 }
 
 
+method decipher ( Str:D $sym ) {
+
+  $!flowbox.get-selected-children.map({ .get-child.label = $sym });
+
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
+}
+
 method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
 
@@ -327,7 +335,9 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
 submethod handle-key ( Int:D $key ) {
 
-  state $visual = False;
+  state $visual   = False;
+  state $decipher = False;
+
   state $start-x;
   state $start-y;
   state $current-x;
@@ -336,6 +346,28 @@ submethod handle-key ( Int:D $key ) {
   state @*yanked;
 
   given $key {
+
+    when GDK_KEY_Return {
+
+      $visual   = not $visual   if $visual;
+      $decipher = not $decipher if $decipher;
+
+      True;
+    }
+
+    when GDK_KEY_Escape {
+
+      $visual   = not $visual   if $visual;
+      $decipher = not $decipher if $decipher;
+
+      True;
+    }
+
+    when $decipher {
+
+      self.decipher: $key.chr;
+
+    }
 
     when GDK_KEY_v {
 
@@ -445,6 +477,12 @@ submethod handle-key ( Int:D $key ) {
       True;
     }
 
+    when GDK_KEY_d {
+
+      $decipher = True;
+
+    }
+
     when GDK_KEY_k {
 
       if $visual {
@@ -481,20 +519,6 @@ submethod handle-key ( Int:D $key ) {
         $current-x += 1 if $current-x < @!sym.columns - 1;
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
-
-      True;
-    }
-
-    when GDK_KEY_Return {
-
-      $visual = not $visual if $visual;
-
-      True;
-    }
-
-    when GDK_KEY_Escape {
-
-      $visual = not $visual if $visual;
 
       True;
     }
