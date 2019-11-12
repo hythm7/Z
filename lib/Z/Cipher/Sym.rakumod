@@ -6,5 +6,6 @@ unit class Z::Cipher::Sym;
 method TWEAK () {
 
   self.name = 'sym';
+  self.width-chars = 1;
 
 }

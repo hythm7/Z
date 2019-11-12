@@ -76,6 +76,9 @@ submethod BUILD (
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
 
+  $!flowbox.column-spacing = 2;
+  $!flowbox.row-spacing    = 2;
+
 	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
 
   $!flowbox.key-press-event.tap( -> *@a {
@@ -120,16 +123,14 @@ method gram ( Z::Cipher:D: Int:D $gram ) {
 
 	my $back =  1 - $gram;  # back step
 
-  gather for @!sym.map( *.get-child.label ).rotor($gram => $back).map(*.join).Bag.pairs {
+  gather for @!sym.map( *.get-child.label ).rotor( $gram => $back ).map(*.join ).Bag.pairs {
 
 		.take if .value > 1;
 
   }
 }
 
-method grams ( :$gram = 1 ) {
-
-  state @grams;
+method grams ( :@grams, :$gram = 1 ) {
 
   my @result = self.gram: $gram;
 
@@ -137,7 +138,7 @@ method grams ( :$gram = 1 ) {
 
   @grams.push: @result;
 
-  self.grams: :gram( $gram + 1 );
+  self.grams: :@grams, gram => $gram + 1;
 
 }
 
@@ -154,9 +155,8 @@ method flip-horizontal ( ) {
 
 	%!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
-  say @!sym.map( *.get-child.label );
-	True;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method flip-vertical ( ) {
@@ -174,7 +174,7 @@ method flip-vertical ( ) {
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
   $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
-  True;
+
 }
 
 method rotate-clockwise ( ) {
@@ -194,8 +194,8 @@ method rotate-clockwise ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
-  True;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method rotate-anticlockwise ( ) {
@@ -215,9 +215,9 @@ method rotate-anticlockwise ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
 
-  True;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method transpose ( ) {
@@ -236,36 +236,37 @@ method transpose ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
-  True;
+
+
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method mirror-horizontal ( ) {
 
   $!flowbox.get-selected-children.map(*.get-child.angle += 90);
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
-  True;
+
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method mirror-vertical ( ) {
 
   $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
-  True;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method angle-clockwise ( ) {
 
-  say $!flowbox.get-selected-children.map(*.get-child.angle += 90);
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
-  True;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method angle-anticlockwise ( ) {
 
-  say $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams;
-  True;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 method color ( ) {
@@ -278,21 +279,12 @@ method color ( ) {
 
   @child.map( *.get-child.override-color: GTK_STATE_FLAG_NORMAL, $color );
 
-
-
-  #my $css = GTK::CSSProvider.new;
-  #my $css-s = "#box \{ background-color: { $color.to_string }; \}";
-
-  #$css.load_from_data($css-s);
-
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams;
-  True;
 }
 
 method yank ( ) {
 
   @*yanked = $!flowbox.get-selected-children.map({ .get-child.label });
-  True;
+
 }
 
 method paste ( ) {
@@ -309,13 +301,13 @@ method paste ( ) {
 
   }
 
-  True;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+
 }
 
 
 method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
-  #say $!flowbox.get-child-at-pos( 0, 0 ).get-child.WHAT;
 
   $!flowbox.unselect-all;
   for ( $start-x ... $current-x ) X ( $start-y ... $current-y ) -> ( $x, $y ) {
@@ -345,7 +337,6 @@ submethod handle-key ( Int:D $key ) {
 
   given $key {
 
-
     when GDK_KEY_v {
 
       $visual = not $visual;
@@ -371,78 +362,91 @@ submethod handle-key ( Int:D $key ) {
     }
 
     when GDK_KEY_f {
+
       self.flip-horizontal;
 
       True;
     }
 
     when GDK_KEY_F {
+
       self.flip-vertical;
 
       True;
     }
 
     when GDK_KEY_r {
+
       self.rotate-clockwise;
 
       True;
     }
 
     when GDK_KEY_R {
+
       self.rotate-anticlockwise;
 
       True;
     }
 
     when GDK_KEY_t {
+
       self.transpose;
 
       True;
     }
 
     when GDK_KEY_m {
+
       self.mirror-horizontal;
 
       True;
     }
 
     when GDK_KEY_M {
+
       self.mirror-vertical;
 
       True;
     }
 
     when GDK_KEY_a {
+
       self.angle-clockwise;
 
-      True;
+      False;
     }
 
     when GDK_KEY_A {
+
       self.angle-anticlockwise;
 
-      True;
+      False;
     }
 
     when GDK_KEY_c {
+
       self.color;
 
       True;
     }
 
     when GDK_KEY_y {
+
       self.yank;
 
       True;
     }
 
     when GDK_KEY_p {
+
       self.paste;
 
       True;
     }
 
     when GDK_KEY_k {
+
       if $visual {
         $current-y -= 1 if $current-y > 0;
         self.visual: $start-x, $start-y, $current-x, $current-y;
@@ -452,6 +456,7 @@ submethod handle-key ( Int:D $key ) {
     }
 
     when GDK_KEY_j {
+
       if $visual {
         $current-y += 1 if $current-y < @!sym.rows - 1;
         self.visual: $start-x, $start-y, $current-x, $current-y;
@@ -461,6 +466,7 @@ submethod handle-key ( Int:D $key ) {
     }
 
     when GDK_KEY_h {
+
       if $visual {
         $current-x -= 1 if $current-x > 0;
         self.visual: $start-x, $start-y, $current-x, $current-y;
@@ -470,10 +476,25 @@ submethod handle-key ( Int:D $key ) {
     }
 
     when GDK_KEY_l {
+
       if $visual {
         $current-x += 1 if $current-x < @!sym.columns - 1;
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
+
+      True;
+    }
+
+    when GDK_KEY_Return {
+
+      $visual = not $visual if $visual;
+
+      True;
+    }
+
+    when GDK_KEY_Escape {
+
+      $visual = not $visual if $visual;
 
       True;
     }
