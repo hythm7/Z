@@ -366,7 +366,10 @@ submethod handle-key ( Int:D $key ) {
     when $decipher {
 
       self.decipher: $key.chr;
+      
+      $decipher = False;
 
+      True;
     }
 
     when GDK_KEY_v {
@@ -378,13 +381,17 @@ submethod handle-key ( Int:D $key ) {
       my $index   = $!flowbox.get-selected-children.first.get-index;
 
       if $index ~~ 0 {
+
         $start-x = 0;
         $start-y = 0;
+
       }
 
       else {
+
         $start-x = $index mod @!sym.columns;
         $start-y = $index div @!sym.columns;
+
       }
 
       $current-x = $start-x;
