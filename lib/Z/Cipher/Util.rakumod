@@ -19,8 +19,3 @@ unit module Z::Cipher::Util;
 #  $menu;
 #}
 
-#sub create-statusbar () {
-#  $!statusbar = GTK::Statusbar.new;
-
-#}
-

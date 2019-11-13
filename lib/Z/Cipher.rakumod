@@ -2,13 +2,14 @@ use Grid;
 use GTK::Raw::Types;
 use GTK::Compat::Types;
 use GTK::Compat::KeySyms;
-use GTK::Utils::MenuBuilder;
 use GTK::Window;
 use GTK::FlowBox;
 use GTK::FlowBoxChild;
 use GTK::Statusbar;
+use GTK::Menu;
+use GTK::MenuItem;
 use GTK::Dialog::ColorChooser;
-use Z::Cipher::Util;
+use GTK::Dialog::FileChooser;
 use Z::Cipher::Sym;
 
 
@@ -21,6 +22,7 @@ has GTK::Window               $!window;
 has GTK::FlowBox              $!flowbox;
 has GTK::Statusbar            $!statusbar;
 has GTK::Dialog::ColorChooser $!colorbox;
+has GTK::Menu                 $!menu;
 
 method new (IO::Path :$filename!) {
 
@@ -37,87 +39,6 @@ method new (IO::Path :$filename!) {
 
 }
 
-
-submethod BUILD (
-
-  :@sym!,
-  :$rows!,
-  :$columns!,
-
-) {
-
-  $!window = GTK::Window.new: GTK_WINDOW_TOPLEVEL, :title<Cipher>;
-
-  $!flowbox                          = GTK::FlowBox.new;
-  $!flowbox.halign                   = GTK_ALIGN_START;
-  $!flowbox.valign                   = GTK_ALIGN_START;
-  $!flowbox.selection-mode           = GTK_SELECTION_MULTIPLE;
-  $!flowbox.activate-on-single-click = False;
-  $!flowbox.homogeneous              = True;
-  $!flowbox.name = 'cipher';
-
-  for @sym -> $sym {
-    my $child = GTK::FlowBoxChild.new;
-    $child.add: Z::Cipher::Sym.new: $sym;
-    %!order{ +$child.FlowBoxChild.p } = $++;
-    $!flowbox.add: $child;
-  }
-
-	$!flowbox.set-sort-func(-> $c1, $c2, $ --> gint {
-    CATCH { default { .message.say } }
-    %!order{ +$c1.p } <=> %!order{ +$c2.p };
-  });
-
-
-  @!sym = $!flowbox.get-children;
-
-	@!sym does Grid[:$columns];
-
-  $!flowbox.min_children_per_line = @!sym.columns;
-  $!flowbox.max_children_per_line = @!sym.columns;
-
-  $!flowbox.column-spacing = 2;
-  $!flowbox.row-spacing    = 2;
-
-	$!flowbox.add-events: GDK_KEY_PRESS_MASK;
-
-  $!flowbox.key-press-event.tap( -> *@a {
-
-    my $key = cast(GdkEventKey, @a[1]).keyval;
-
-    @a[*-1].r = self.handle-key: $key;
-
-  });
-
-  $!flowbox.child-activated.tap( -> @ {
-    my $sym   = $!flowbox.get-selected-children.head.get-child.label;
-    my @child = $!flowbox.get-children.grep({ .get-child.label ~~ $sym });
-
-    @child.map( -> $child { $!flowbox.select-child: $child } );
-
-    $!statusbar.push: $!statusbar.get-context-id(self), "$sym { +@child}";
-
-  } );
-
-
-  $!statusbar = GTK::Statusbar.new;
-  $!statusbar.margin = 0;
-  $!colorbox  = GTK::Dialog::ColorChooser.new: 'Choose color', $!window;
-
-  my $box = GTK::Box.new-vbox( );
-
-  $box.pack_start( $!flowbox );
-  $box.pack_end( $!statusbar );
-
-  $!window.add( $box );
-
-  $!window.show_all( );
-
-  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
-
-}
-
-method window ( ) { $!window   }
 
 method gram ( Z::Cipher:D: Int:D $gram ) {
 
@@ -333,7 +254,9 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
 }
 
-submethod handle-key ( Int:D $key ) {
+submethod handle-key ( GdkEventAny:D $event ) {
+
+  my $key = cast( GdkEventKey, $event );
 
   state $visual   = False;
   state $decipher = False;
@@ -345,7 +268,7 @@ submethod handle-key ( Int:D $key ) {
 
   state @*yanked;
 
-  given $key {
+  given $key.keyval {
 
     when GDK_KEY_Return {
 
@@ -365,8 +288,8 @@ submethod handle-key ( Int:D $key ) {
 
     when $decipher {
 
-      self.decipher: $key.chr;
-      
+      self.decipher: .chr;
+
       $decipher = False;
 
       True;
@@ -537,4 +460,140 @@ submethod handle-key ( Int:D $key ) {
 
   }
 }
+
+submethod handle-button ( GdkEventAny:D $event ) {
+
+  my $button = cast( GdkEventButton, $event );
+
+  given $button.button {
+
+    when GDK_BUTTON_SECONDARY {
+
+      $!menu.popup-at-pointer: $event;
+
+      True;
+    }
+
+    default {
+
+      False;
+
+    }
+
+  }
+
+}
+
+submethod BUILD (
+
+  :@sym!,
+  :$rows!,
+  :$columns!,
+
+) {
+
+  $!window = GTK::Window.new: GTK_WINDOW_TOPLEVEL, :title<Cipher>;
+
+  $!flowbox                          = GTK::FlowBox.new;
+  $!flowbox.halign                   = GTK_ALIGN_START;
+  $!flowbox.valign                   = GTK_ALIGN_START;
+  $!flowbox.selection-mode           = GTK_SELECTION_MULTIPLE;
+  $!flowbox.activate-on-single-click = False;
+  $!flowbox.homogeneous              = True;
+  $!flowbox.name = 'cipher';
+
+  for @sym -> $sym {
+    my $child = GTK::FlowBoxChild.new;
+    $child.add: Z::Cipher::Sym.new: $sym;
+    %!order{ +$child.FlowBoxChild.p } = $++;
+    $!flowbox.add: $child;
+  }
+
+	$!flowbox.set-sort-func(-> $c1, $c2, $ --> gint {
+    CATCH { default { .message.say } }
+    %!order{ +$c1.p } <=> %!order{ +$c2.p };
+  });
+
+
+  @!sym = $!flowbox.get-children;
+
+	@!sym does Grid[:$columns];
+
+  $!flowbox.min_children_per_line = @!sym.columns;
+  $!flowbox.max_children_per_line = @!sym.columns;
+
+  $!flowbox.column-spacing = 2;
+  $!flowbox.row-spacing    = 2;
+
+  $!flowbox.key-press-event.tap( -> *@a {
+
+    @a[*-1].r = self.handle-key: @a[1];
+
+  });
+
+  $!flowbox.button-press-event.tap( -> *@a {
+
+    @a[*-1].r = self.handle-button: @a[1];
+
+  });
+
+
+  $!flowbox.child-activated.tap( -> @ {
+
+    my $sym   = $!flowbox.get-selected-children.head.get-child.label;
+    my @child = $!flowbox.get-children.grep({ .get-child.label ~~ $sym });
+
+    @child.map( -> $child { $!flowbox.select-child: $child } );
+
+    $!statusbar.push: $!statusbar.get-context-id(self), "$sym { +@child}";
+
+  } );
+
+
+  $!statusbar = GTK::Statusbar.new;
+  $!statusbar.margin = 0;
+
+  $!colorbox  = GTK::Dialog::ColorChooser.new: 'Choose color', $!window;
+
+  $!menu = GTK::Menu.new;
+
+  my $save  = GTK::MenuItem.new-with-label: 'save';
+  my $close = GTK::MenuItem.new-with-label: 'close';
+
+  $save.activate.tap( -> *@ {
+
+    my $chooser = GTK::Dialog::FileChooser.new: 'Save', $!window, GTK_FILE_CHOOSER_ACTION_SAVE;
+
+    if $chooser.run ~~  GTK_RESPONSE_OK {
+
+      my $filename = $chooser.filename;
+
+      say $filename with $filename;
+    }
+
+  } );
+
+  $close.activate.tap( -> *@ { $!window.close } );
+
+  $!menu.append: $save;
+  $!menu.append: $close;
+
+  $!menu.show-all;
+
+  my $box = GTK::Box.new-vbox( );
+
+  $box.pack_start( $!flowbox );
+  $box.pack_end( $!statusbar );
+
+  $!window.add( $box );
+
+  $!window.show_all( );
+
+  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
+
+}
+
+method window ( ) { $!window   }
+
+
 
