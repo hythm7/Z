@@ -24,21 +24,6 @@ has GTK::Statusbar            $!statusbar;
 has GTK::Dialog::ColorChooser $!colorbox;
 has GTK::Menu                 $!menu;
 
-method new (IO::Path :$filename!) {
-
-	my $file = slurp $filename;
-
-	return Nil unless [==] (.chars for $file.lines);
-
-	my $rows    = $file.lines.elems;
-	my $columns = $file.lines[0].chars;
-
-	my @sym = $file.comb: /\N/;
-
-	self.bless(:@sym, :$rows, :$columns);
-
-}
-
 
 method gram ( Z::Cipher:D: Int:D $gram ) {
 
@@ -254,6 +239,36 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
 }
 
+method new-cipher ( ) {
+
+  my @indices = $!flowbox.get-selected-children.map( *.get-index ).sort;
+  
+  my $first-x = @indices.head mod @!sym.columns;
+  my $first-y = @indices.head div @!sym.columns;
+  my $last-x  = @indices.tail mod @!sym.columns;
+  my $last-y  = @indices.tail div @!sym.columns;
+
+  # return unless ( $first-x ~~ $last-x ) and ( $first-y ~~ $last-y ); 
+
+  my $rows    = $last-y - $first-y + 1;
+  my $columns = $last-x - $first-x + 1;
+  
+  my @sym = @!sym[ @indices ].map( *.get-child.label );
+
+  self.new: :@sym, :$rows, :$columns;
+
+  CATCH {
+
+    default {
+
+      $!statusbar.push: $!statusbar.get-context-id(self), .message;
+
+    }
+
+  }
+
+}
+
 submethod handle-key ( GdkEventAny:D $event ) {
 
   my $key = cast( GdkEventKey, $event );
@@ -301,7 +316,7 @@ submethod handle-key ( GdkEventAny:D $event ) {
 
       return True unless $visual;
 
-      my $index   = $!flowbox.get-selected-children.first.get-index;
+      my $index   = $!flowbox.get-selected-children.head.get-index;
 
       if $index ~~ 0 {
 
@@ -320,56 +335,56 @@ submethod handle-key ( GdkEventAny:D $event ) {
       $current-x = $start-x;
       $current-y = $start-y;
 
-      True;
+      False;
     }
 
     when GDK_KEY_f {
 
       self.flip-horizontal;
 
-      True;
+      False;
     }
 
     when GDK_KEY_F {
 
       self.flip-vertical;
 
-      True;
+      False;
     }
 
     when GDK_KEY_r {
 
       self.rotate-clockwise;
 
-      True;
+      False;
     }
 
     when GDK_KEY_R {
 
       self.rotate-anticlockwise;
 
-      True;
+      False;
     }
 
     when GDK_KEY_t {
 
       self.transpose;
 
-      True;
+      False;
     }
 
     when GDK_KEY_m {
 
       self.mirror-horizontal;
 
-      True;
+      False;
     }
 
     when GDK_KEY_M {
 
       self.mirror-vertical;
 
-      True;
+      False;
     }
 
     when GDK_KEY_a {
@@ -390,21 +405,28 @@ submethod handle-key ( GdkEventAny:D $event ) {
 
       self.color;
 
-      True;
+      False;
     }
 
     when GDK_KEY_y {
 
       self.yank;
 
-      True;
+      False;
     }
 
     when GDK_KEY_p {
 
       self.paste;
 
-      True;
+      False;
+    }
+
+    when GDK_KEY_n {
+
+      self.new-cipher;
+
+      False;
     }
 
     when GDK_KEY_d {
@@ -420,7 +442,7 @@ submethod handle-key ( GdkEventAny:D $event ) {
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
 
-      True;
+      False;
     }
 
     when GDK_KEY_j {
@@ -430,7 +452,7 @@ submethod handle-key ( GdkEventAny:D $event ) {
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
 
-      True;
+      False;
     }
 
     when GDK_KEY_h {
@@ -440,7 +462,7 @@ submethod handle-key ( GdkEventAny:D $event ) {
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
 
-      True;
+      False;
     }
 
     when GDK_KEY_l {
@@ -450,13 +472,12 @@ submethod handle-key ( GdkEventAny:D $event ) {
         self.visual: $start-x, $start-y, $current-x, $current-y;
       }
 
-      True;
+      False;
     }
 
     default {
       False;
     }
-
 
   }
 }
@@ -483,6 +504,8 @@ submethod handle-button ( GdkEventAny:D $event ) {
   }
 
 }
+
+method window ( ) { $!window   }
 
 submethod BUILD (
 
@@ -557,8 +580,8 @@ submethod BUILD (
 
   $!menu = GTK::Menu.new;
 
-  my $save  = GTK::MenuItem.new-with-label: 'save';
-  my $close = GTK::MenuItem.new-with-label: 'close';
+  my $save  = GTK::MenuItem.new-with-mnemonic: '_save';
+  my $close = GTK::MenuItem.new-with-mnemonic: '_close';
 
   $save.activate.tap( -> *@ {
 
@@ -566,9 +589,9 @@ submethod BUILD (
 
     if $chooser.run ~~  GTK_RESPONSE_OK {
 
-      my $filename = $chooser.filename;
+      my $filename = $chooser.filename.IO;
 
-      say $filename with $filename;
+      $filename.spurt: @!sym.map( *.get-child.label ).rotor( @!sym.columns ).map( *.join ).join( "\n" ) with $filename;
     }
 
   } );
@@ -589,11 +612,28 @@ submethod BUILD (
 
   $!window.show_all( );
 
-  #$!statusbar.push: $!statusbar.get-context-id(self), self.grams;
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
 
 }
 
-method window ( ) { $!window   }
 
+multi method new ( :@sym!, :$rows!, :$columns! ) {
+
+	self.bless( :@sym, :$rows, :$columns );
+
+}
+
+multi method new ( IO::Path :$filename! ) {
+
+	return Nil unless [==] (.chars for $filename.lines);
+
+	my $rows    = $filename.lines.elems;
+	my $columns = $filename.lines[0].chars;
+
+	my @sym = $filename.comb: /\N/;
+
+	nextwith :@sym, :$rows, :$columns;
+
+}
 
 
