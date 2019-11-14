@@ -8,7 +8,7 @@
     "authors" : [ "Haytham Elganiny" ],
     "license" : "Artistic-2.0",
     "provides" : {
-        "Grid" : "lib/Z.pm"
+        "Z" : "lib/Z.pm"
     },
     "depends" : [
       "Grid"

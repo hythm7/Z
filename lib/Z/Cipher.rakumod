@@ -25,32 +25,52 @@ has GTK::Dialog::ColorChooser $!colorbox;
 has GTK::Menu                 $!menu;
 
 
-method gram ( Z::Cipher:D: Int:D $gram ) {
+method gram ( Z::Cipher:D: :@sym!, Int:D :$gram! ) {
 
 	my $back =  1 - $gram;  # back step
 
-  gather for @!sym.map( *.get-child.label ).rotor( $gram => $back ).map(*.join ).Bag.pairs {
+  gather for @sym.map( *.get-child.label ).rotor( $gram => $back ).map(*.join ).Bag.pairs {
 
 		.take if .value > 1;
 
   }
 }
 
-method grams ( :@grams, :$gram = 1 ) {
+method grams ( :@sym = @!sym, :@grams, :$gram = 1 ) {
 
-  my @result = self.gram: $gram;
+  my @result = self.gram: :@sym, :$gram;
 
   return @grams unless @result;
 
   @grams.push: @result;
 
-  self.grams: :@grams, gram => $gram + 1;
+  self.grams: :@sym, :@grams, :gram( $gram + 1 );
+
+}
+
+method selection-grams ( ) {
+
+  my @indices = $!flowbox.get-selected-children.map( *.get-index ).sort;
+
+  self.grams: :sym( @!sym[ @indices ] );
+
+}
+
+method grams-count ( ) {
+
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( +* );
+
+}
+
+method selection-grams-count ( ) {
+
+  $!statusbar.push: $!statusbar.get-context-id(self), self.selection-grams.map( +* );
 
 }
 
 method flip-horizontal ( ) {
 
-  my @horizontal = $!flowbox.get-selected-children.map(*.get-index);
+  my @horizontal = $!flowbox.get-selected-children.map( *.get-index );
 
   if @horizontal {
     @!sym := @!sym.flip: :@horizontal;
@@ -61,13 +81,13 @@ method flip-horizontal ( ) {
 
 	%!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
 method flip-vertical ( ) {
 
-  my @vertical = $!flowbox.get-selected-children.map(*.get-index);
+  my @vertical = $!flowbox.get-selected-children.map( *.get-index );
 
   if @vertical {
     @!sym := @!sym.flip: :@vertical;
@@ -79,13 +99,13 @@ method flip-vertical ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
 method rotate-clockwise ( ) {
 
-  my @clockwise = $!flowbox.get-selected-children.map(*.get-index);
+  my @clockwise = $!flowbox.get-selected-children.map( *.get-index );
 
   if @clockwise {
     @!sym := @!sym.rotate: :@clockwise;
@@ -100,13 +120,13 @@ method rotate-clockwise ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
 method rotate-anticlockwise ( ) {
 
-  my @anticlockwise = $!flowbox.get-selected-children.map(*.get-index);
+  my @anticlockwise = $!flowbox.get-selected-children.map( *.get-index );
 
   if @anticlockwise {
     @!sym := @!sym.rotate: :@anticlockwise;
@@ -122,7 +142,7 @@ method rotate-anticlockwise ( ) {
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
@@ -144,7 +164,7 @@ method transpose ( ) {
 	$!flowbox.invalidate-sort;
 
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
@@ -152,26 +172,26 @@ method mirror-horizontal ( ) {
 
   $!flowbox.get-selected-children.map(*.get-child.angle += 90);
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
 method mirror-vertical ( ) {
 
   $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
 method angle-clockwise ( ) {
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
 method angle-anticlockwise ( ) {
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
@@ -207,7 +227,7 @@ method paste ( ) {
 
   }
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
@@ -216,14 +236,14 @@ method decipher ( Str:D $sym ) {
 
   $!flowbox.get-selected-children.map({ .get-child.label = $sym });
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
 method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
-
   $!flowbox.unselect-all;
+
   for ( $start-x ... $current-x ) X ( $start-y ... $current-y ) -> ( $x, $y ) {
 
    # WORKAROUND: Convert $x, $y to $index, till p6GtkPlus #43 resolved
@@ -242,30 +262,16 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
 method new-cipher ( ) {
 
   my @indices = $!flowbox.get-selected-children.map( *.get-index ).sort;
-  
-  my $first-x = @indices.head mod @!sym.columns;
-  my $first-y = @indices.head div @!sym.columns;
-  my $last-x  = @indices.tail mod @!sym.columns;
-  my $last-y  = @indices.tail div @!sym.columns;
 
-  # return unless ( $first-x ~~ $last-x ) and ( $first-y ~~ $last-y ); 
+  my $columns = @!sym.has-subgrid: :@indices;
 
-  my $rows    = $last-y - $first-y + 1;
-  my $columns = $last-x - $first-x + 1;
-  
+  return unless $columns;
+
+  my $rows    = @indices.elems div $columns;
+
   my @sym = @!sym[ @indices ].map( *.get-child.label );
 
   self.new: :@sym, :$rows, :$columns;
-
-  CATCH {
-
-    default {
-
-      $!statusbar.push: $!statusbar.get-context-id(self), .message;
-
-    }
-
-  }
 
 }
 
@@ -397,6 +403,20 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_A {
 
       self.angle-anticlockwise;
+
+      False;
+    }
+
+    when GDK_KEY_g {
+
+      self.selection-grams-count;
+
+      False;
+    }
+
+    when GDK_KEY_G {
+
+      self.grams-count;
 
       False;
     }
@@ -635,5 +655,4 @@ multi method new ( IO::Path :$filename! ) {
 	nextwith :@sym, :$rows, :$columns;
 
 }
-
 
