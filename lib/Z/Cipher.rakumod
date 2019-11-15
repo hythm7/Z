@@ -44,21 +44,16 @@ method grams-count ( Bool:D :$selection = False ) {
 
 method gram ( Int:D $gram ) {
 
-  my $back = 1 - $gram;
-
-  my @gram = gram( :@!sym :$gram );
-
   $!flowbox.unselect-all;
 
-   @!sym.rotor( $gram => $back ).grep( -> @sym { 
+  my @gram = gram :@!sym :$gram;
 
-    @sym.map( *.get-child.label ).cache ~~ any( @gram.map( *.comb) );
+  my $back = 1 - $gram;
 
-   }).flat.map( -> $child { $!flowbox.select-child: $child } );
-  #say @gram.map( *.map( *.get-child.label ) );
-
-
-  #say @gram.map( *.map( -> $child { $child.get-child.label } ) );
+  @!sym.rotor( $gram => $back )
+    ==> grep({ .map( *.get-child.label ).join ~~ any @gram } )
+    ==> flat( )
+    ==> map( -> $child { $!flowbox.select-child: $child } );
 
 }
 
@@ -328,14 +323,7 @@ submethod handle-key ( GdkEventAny:D $event ) {
       True;
     }
 
-    when $decipher {
-
-      self.decipher: .chr;
-
-      $decipher = False;
-
-      True;
-    }
+    when $decipher { self.decipher: .chr; $decipher = False; True; }
 
     when GDK_KEY_v {
 
@@ -343,7 +331,7 @@ submethod handle-key ( GdkEventAny:D $event ) {
 
       return True unless $visual;
 
-      # TODO: Start at child under cursoP
+      # TODO: Start at child under cursor
 
       my $index   = $!flowbox.get-selected-children.head.get-index // 0;
 
@@ -367,137 +355,31 @@ submethod handle-key ( GdkEventAny:D $event ) {
       False;
     }
 
-    when GDK_KEY_f {
-
-      self.flip-horizontal;
-
-      False;
-    }
-
-    when GDK_KEY_F {
-
-      self.flip-vertical;
-
-      False;
-    }
-
-    when GDK_KEY_r {
-
-      self.rotate-clockwise;
-
-      False;
-    }
-
-    when GDK_KEY_R {
-
-      self.rotate-anticlockwise;
-
-      False;
-    }
-
-    when GDK_KEY_t {
-
-      self.transpose;
-
-      False;
-    }
-
-    when GDK_KEY_m {
-
-      self.mirror-horizontal;
-
-      False;
-    }
-
-    when GDK_KEY_M {
-
-      self.mirror-vertical;
-
-      False;
-    }
-
-    when GDK_KEY_a {
-
-      self.angle-clockwise;
-
-      False;
-    }
-
-    when GDK_KEY_A {
-
-      self.angle-anticlockwise;
-
-      False;
-    }
-
-    when GDK_KEY_g {
-
-      self.grams-count;
-
-      False;
-    }
-
-    when GDK_KEY_G {
-
-      self.grams-count: :selection;
-
-      False;
-    }
-
-    when GDK_KEY_1 {
-
-      self.gram: 1;
-
-      False;
-    }
-
-    when GDK_KEY_2 {
-
-      self.gram: 2;
-
-      False;
-    }
-
-    when GDK_KEY_3 {
-
-      self.gram: 3;
-
-      False;
-    }
-
-    when GDK_KEY_c {
-
-      self.color;
-
-      False;
-    }
-
-    when GDK_KEY_y {
-
-      self.yank;
-
-      False;
-    }
-
-    when GDK_KEY_p {
-
-      self.paste;
-
-      False;
-    }
-
-    when GDK_KEY_n {
-
-      self.new-cipher;
-
-      False;
-    }
-
-    when GDK_KEY_d {
-
-      $decipher = True;
-
-    }
+    when GDK_KEY_f { self.flip-horizontal;         False; }
+    when GDK_KEY_F { self.flip-vertical;           False; }
+    when GDK_KEY_r { self.rotate-clockwise;        False; }
+    when GDK_KEY_R { self.rotate-anticlockwise;    False; }
+    when GDK_KEY_t { self.transpose;               False; }
+    when GDK_KEY_m { self.mirror-horizontal;       False; }
+    when GDK_KEY_M { self.mirror-vertical;         False; }
+    when GDK_KEY_a { self.angle-clockwise;         False; }
+    when GDK_KEY_A { self.angle-anticlockwise;     False; }
+    when GDK_KEY_g { self.grams-count;             False; }
+    when GDK_KEY_G { self.grams-count: :selection; False; }
+    when GDK_KEY_1 { self.gram: 1;                 False; }
+    when GDK_KEY_2 { self.gram: 2;                 False; }
+    when GDK_KEY_3 { self.gram: 3;                 False; }
+    when GDK_KEY_4 { self.gram: 4;                 False; }
+    when GDK_KEY_5 { self.gram: 5;                 False; }
+    when GDK_KEY_6 { self.gram: 6;                 False; }
+    when GDK_KEY_7 { self.gram: 7;                 False; }
+    when GDK_KEY_8 { self.gram: 8;                 False; }
+    when GDK_KEY_9 { self.gram: 9;                 False; }
+    when GDK_KEY_c { self.color;                   False; }
+    when GDK_KEY_y { self.yank;                    False; }
+    when GDK_KEY_p { self.paste;                   False; }
+    when GDK_KEY_n { self.new-cipher;              False; }
+    when GDK_KEY_d { $decipher = True;             False; }
 
     when GDK_KEY_k {
 
@@ -540,7 +422,9 @@ submethod handle-key ( GdkEventAny:D $event ) {
     }
 
     default {
+
       False;
+
     }
 
   }
