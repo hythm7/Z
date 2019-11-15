@@ -42,15 +42,40 @@ method grams-count ( Bool:D :$selection = False ) {
 
 }
 
+method gram ( Int:D $gram ) {
+
+  my $back = 1 - $gram;
+
+  my @gram = gram( :@!sym :$gram );
+
+  $!flowbox.unselect-all;
+
+   @!sym.rotor( $gram => $back ).grep( -> @sym { 
+
+    @sym.map( *.get-child.label ).cache ~~ any( @gram.map( *.comb) );
+
+   }).flat.map( -> $child { $!flowbox.select-child: $child } );
+  #say @gram.map( *.map( *.get-child.label ) );
+
+
+  #say @gram.map( *.map( -> $child { $child.get-child.label } ) );
+
+}
+
 method flip-horizontal ( ) {
 
   my @horizontal = $!flowbox.get-selected-children.map( *.get-index );
 
   if @horizontal {
+
     @!sym := @!sym.flip: :@horizontal;
+
   }
+
   else {
+
     @!sym := @!sym.flip: :horizontal;
+
   }
 
 	%!order{ +.FlowBoxChild.p } = $++ for @!sym;
@@ -65,12 +90,16 @@ method flip-vertical ( ) {
   my @vertical = $!flowbox.get-selected-children.map( *.get-index );
 
   if @vertical {
+
     @!sym := @!sym.flip: :@vertical;
-  }
-  else {
-    @!sym := @!sym.flip: :vertical;
+
   }
 
+  else {
+
+    @!sym := @!sym.flip: :vertical;
+
+  }
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
@@ -84,12 +113,16 @@ method rotate-clockwise ( ) {
   my @clockwise = $!flowbox.get-selected-children.map( *.get-index );
 
   if @clockwise {
+
     @!sym := @!sym.rotate: :@clockwise;
-  }
-  else {
-    @!sym := @!sym.rotate: :clockwise;
+
   }
 
+  else {
+
+    @!sym := @!sym.rotate: :clockwise;
+
+  }
 
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
@@ -290,6 +323,8 @@ submethod handle-key ( GdkEventAny:D $event ) {
       $visual   = not $visual   if $visual;
       $decipher = not $decipher if $decipher;
 
+      $!flowbox.unselect-all;
+
       True;
     }
 
@@ -308,7 +343,9 @@ submethod handle-key ( GdkEventAny:D $event ) {
 
       return True unless $visual;
 
-      my $index   = $!flowbox.get-selected-children.head.get-index;
+      # TODO: Start at child under cursoP
+
+      my $index   = $!flowbox.get-selected-children.head.get-index // 0;
 
       if $index ~~ 0 {
 
@@ -403,6 +440,27 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_G {
 
       self.grams-count: :selection;
+
+      False;
+    }
+
+    when GDK_KEY_1 {
+
+      self.gram: 1;
+
+      False;
+    }
+
+    when GDK_KEY_2 {
+
+      self.gram: 2;
+
+      False;
+    }
+
+    when GDK_KEY_3 {
+
+      self.gram: 3;
 
       False;
     }
