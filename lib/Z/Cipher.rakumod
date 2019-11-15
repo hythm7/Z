@@ -11,6 +11,7 @@ use GTK::MenuItem;
 use GTK::Dialog::ColorChooser;
 use GTK::Dialog::FileChooser;
 use Z::Cipher::Sym;
+use Z::Cipher::Utils;
 
 
 unit class Z::Cipher;
@@ -25,46 +26,19 @@ has GTK::Dialog::ColorChooser $!colorbox;
 has GTK::Menu                 $!menu;
 
 
-method gram ( Z::Cipher:D: :@sym!, Int:D :$gram! ) {
+method grams ( Bool:D :$selection = False ) {
 
-	my $back =  1 - $gram;  # back step
+  my @sym = $selection
+    ?? @!sym[ $!flowbox.get-selected-children.map( *.get-index ).sort ]
+    !! @!sym;
 
-  gather for @sym.map( *.get-child.label ).rotor( $gram => $back ).map(*.join ).Bag.pairs {
-
-		.take if .value > 1;
-
-  }
-}
-
-method grams ( :@sym = @!sym, :@grams, :$gram = 1 ) {
-
-  my @result = self.gram: :@sym, :$gram;
-
-  return @grams unless @result;
-
-  @grams.push: @result;
-
-  self.grams: :@sym, :@grams, :gram( $gram + 1 );
+  grams :@sym;
 
 }
 
-method selection-grams ( ) {
+method grams-count ( Bool:D :$selection = False ) {
 
-  my @indices = $!flowbox.get-selected-children.map( *.get-index ).sort;
-
-  self.grams: :sym( @!sym[ @indices ] );
-
-}
-
-method grams-count ( ) {
-
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( +* );
-
-}
-
-method selection-grams-count ( ) {
-
-  $!statusbar.push: $!statusbar.get-context-id(self), self.selection-grams.map( +* );
+  $!statusbar.push: $!statusbar.get-context-id(self), self.grams( :$selection ).map( +* );
 
 }
 
@@ -81,6 +55,7 @@ method flip-horizontal ( ) {
 
 	%!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
+
   self.grams-count;
 
 }
@@ -99,6 +74,7 @@ method flip-vertical ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
+
   self.grams-count;
 
 }
@@ -120,6 +96,7 @@ method rotate-clockwise ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
+
   self.grams-count;
 
 }
@@ -129,12 +106,16 @@ method rotate-anticlockwise ( ) {
   my @anticlockwise = $!flowbox.get-selected-children.map( *.get-index );
 
   if @anticlockwise {
+
     @!sym := @!sym.rotate: :@anticlockwise;
-  }
-  else {
-    @!sym := @!sym.rotate: :anticlockwise;
+
   }
 
+  else {
+
+    @!sym := @!sym.rotate: :anticlockwise;
+
+  }
 
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
@@ -151,10 +132,15 @@ method transpose ( ) {
   my @indices = $!flowbox.get-selected-children.map(*.get-index);
 
   if @indices {
+
     @!sym := @!sym.transpose: :@indices;
+
   }
+
   else {
+
     @!sym := @!sym.transpose;
+
   }
 
   $!flowbox.min_children_per_line = @!sym.columns;
@@ -162,7 +148,6 @@ method transpose ( ) {
 
   %!order{ +.FlowBoxChild.p } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
-
 
   self.grams-count;
 
@@ -179,6 +164,7 @@ method mirror-horizontal ( ) {
 method mirror-vertical ( ) {
 
   $!flowbox.get-selected-children.map(*.get-child.angle -= 90);
+
   self.grams-count;
 
 }
@@ -409,14 +395,14 @@ submethod handle-key ( GdkEventAny:D $event ) {
 
     when GDK_KEY_g {
 
-      self.selection-grams-count;
+      self.grams-count;
 
       False;
     }
 
     when GDK_KEY_G {
 
-      self.grams-count;
+      self.grams-count: :selection;
 
       False;
     }
