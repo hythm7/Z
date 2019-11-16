@@ -4,8 +4,12 @@ flowbox {
   color: white
 }
 
+#xbox {
+  background-color: green;
+}
+
 #sym {
-  font-family: Untitled2;
+  font-family: Zodiac;
   font-size:   14px;
 }
 
