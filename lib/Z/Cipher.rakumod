@@ -38,7 +38,7 @@ method grams ( Bool:D :$selection = False ) {
 
 method grams-count ( Bool:D :$selection = False ) {
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams( :$selection ).map( +* );
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams( :$selection ).map( +* );
 
 }
 
@@ -285,7 +285,7 @@ method new-cipher ( Bool:D :$selection = False ) {
 
   my $rows = @index.elems div $columns;
 
-  my @sym = @!sym[ @index ].map( *.get-child.label );
+  my @sym = @!sym[ @index ].map( *.get-child );
 
   self.new: :@sym, :$rows, :$columns;
 
@@ -382,6 +382,7 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_c { self.color;                   False; }
     when GDK_KEY_y { self.yank;                    False; }
     when GDK_KEY_p { self.paste;                   False; }
+    when GDK_KEY_Q { self.quit;                    False; }
 
     when GDK_KEY_d {
 
@@ -475,42 +476,39 @@ submethod handle-button ( GdkEventAny:D $event ) {
 
 }
 
-method window ( ) { $!window   }
+method window ( ) { $!window }
 
-submethod BUILD (
+method quit ( ) { $!window.close }
 
-  :@sym!,
-  :$rows!,
-  :$columns!,
-
-) {
+submethod TWEAK ( ) {
 
   $!window = GTK::Window.new: GTK_WINDOW_TOPLEVEL, :title<Cipher>;
 
-  $!flowbox                          = GTK::FlowBox.new;
-  $!flowbox.halign                   = GTK_ALIGN_START;
-  $!flowbox.valign                   = GTK_ALIGN_START;
-  $!flowbox.selection-mode           = GTK_SELECTION_MULTIPLE;
-  $!flowbox.activate-on-single-click = False;
+  $!flowbox = GTK::FlowBox.new;
+ 
+  $!flowbox.halign = GTK_ALIGN_START;
+  $!flowbox.valign = GTK_ALIGN_START;
+
+  $!flowbox.selection-mode = GTK_SELECTION_MULTIPLE;
+
   $!flowbox.homogeneous              = True;
+  $!flowbox.activate-on-single-click = False;
+
   $!flowbox.name = 'cipher';
 
-  for @sym -> $sym {
-    my $child = GTK::FlowBoxChild.new;
-    $child.add: Z::Cipher::Sym.new: $sym;
-    %!order{ +$child.FlowBoxChild.p } = $++;
-    $!flowbox.add: $child;
-  }
+  @!sym.map( -> $sym {  $!flowbox.add: $sym } );
 
 	$!flowbox.set-sort-func(-> $c1, $c2, $ --> gint {
+
     CATCH { default { .message.say } }
+
     %!order{ +$c1.p } <=> %!order{ +$c2.p };
+
   });
 
 
   @!sym = $!flowbox.get-children;
 
-	@!sym does Grid[:$columns];
 
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
@@ -542,7 +540,6 @@ submethod BUILD (
 
   } );
 
-
   $!statusbar = GTK::Statusbar.new;
   $!statusbar.margin = 0;
 
@@ -551,7 +548,7 @@ submethod BUILD (
   $!menu = GTK::Menu.new;
 
   my $save  = GTK::MenuItem.new-with-mnemonic: '_save';
-  my $close = GTK::MenuItem.new-with-mnemonic: '_close';
+  my $quit = GTK::MenuItem.new-with-mnemonic: '_quit';
 
   $save.activate.tap( -> *@ {
 
@@ -566,10 +563,10 @@ submethod BUILD (
 
   } );
 
-  $close.activate.tap( -> *@ { $!window.close } );
+  $quit.activate.tap( -> *@ { self.quit } );
 
   $!menu.append: $save;
-  $!menu.append: $close;
+  $!menu.append: $quit;
 
   $!menu.show-all;
 
@@ -598,14 +595,55 @@ submethod BUILD (
 
   $!window.show_all( );
 
-  $!statusbar.push: $!statusbar.get-context-id(self), self.grams.map( *.elems );
+  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams.map( *.elems );
 
 }
 
+multi submethod BUILD ( :@sym where { .all ~~ Z::Cipher::Sym }, :$rows!, :$columns! ) {
+
+  for @sym {
+
+    my $child = GTK::FlowBoxChild.new;
+
+    my $label = .label;
+    #my $color = .get-color;
+
+    my $sym = Z::Cipher::Sym.new: $label;
+
+    #$sym.override-color: GTK_STATE_FLAG_NORMAL, $color;
+
+    $child.add: $sym;
+
+    @!sym.push: $child;
+
+    @!sym.map( { %!order{ + .FlowBoxChild.p } = $++ } );
+
+  }
+
+	@!sym does Grid[:$columns];
+}
+
+multi submethod BUILD ( :@sym! where { .all ~~ Str }, :$rows!, :$columns! ) {
+
+  for @sym -> $sym {
+
+    my $child = GTK::FlowBoxChild.new;
+
+    $child.add:  Z::Cipher::Sym.new: $sym;
+
+    @!sym.push: $child;
+
+    @!sym.map( { %!order{ + .FlowBoxChild.p } = $++ } );
+
+  }
+
+	@!sym does Grid[ :$columns ];
+ 
+}
 
 multi method new ( :@sym!, :$rows!, :$columns! ) {
 
-	self.bless( :@sym, :$rows, :$columns );
+	self.bless: :@sym :$rows :$columns;
 
 }
 
@@ -616,9 +654,9 @@ multi method new ( IO::Path :$filename! ) {
 	my $rows    = $filename.lines.elems;
 	my $columns = $filename.lines[0].chars;
 
-	my @sym = $filename.comb: /\N/;
+	my @sym = $filename.comb( /\N/ );
 
-	nextwith :@sym, :$rows, :$columns;
+	nextwith :@sym :$rows :$columns;
 
 }
 
