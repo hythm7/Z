@@ -157,11 +157,11 @@ method rotate-anticlockwise ( ) {
 
 method transpose ( ) {
 
-  my @indices = $!flowbox.get-selected-children.map(*.get-index);
+  my @index = $!flowbox.get-selected-children.map(*.get-index);
 
-  if @indices {
+  if @index {
 
-    @!sym := @!sym.transpose: :@indices;
+    @!sym := @!sym.transpose: :@index;
 
   }
 
@@ -231,11 +231,11 @@ method paste ( ) {
 
   my $index = $!flowbox.get-selected-children.first.get-index;
 
-  my @indices = $index X+ ^@*yanked.elems;
+  my @index = $index X+ ^@*yanked.elems;
 
-  return if @indices.tail > @!sym.end;
+  return if @index.tail > @!sym.end;
 
-  for @indices Z @*yanked -> ( $index, $sym ) {
+  for @index Z @*yanked -> ( $index, $sym ) {
 
     $!flowbox.get-child-at-index( $index ).get-child.label = $sym;
 
@@ -273,17 +273,19 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
 }
 
-method new-cipher ( ) {
+method new-cipher ( Bool:D :$selection = False ) {
 
-  my @indices = $!flowbox.get-selected-children.map( *.get-index ).sort;
+  my @index = $selection
+    ?? $!flowbox.get-selected-children.map( *.get-index ).sort
+    !! @!sym.keys;
 
-  my $columns = @!sym.has-subgrid: :@indices;
+  my $columns = @!sym.has-subgrid: :@index;
 
   return unless $columns;
 
-  my $rows    = @indices.elems div $columns;
+  my $rows = @index.elems div $columns;
 
-  my @sym = @!sym[ @indices ].map( *.get-child.label );
+  my @sym = @!sym[ @index ].map( *.get-child.label );
 
   self.new: :@sym, :$rows, :$columns;
 
@@ -366,6 +368,8 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_A { self.angle-anticlockwise;     False; }
     when GDK_KEY_g { self.grams-count;             False; }
     when GDK_KEY_G { self.grams-count: :selection; False; }
+    when GDK_KEY_n { self.new-cipher;              False; }
+    when GDK_KEY_N { self.new-cipher:  :selection; False; }
     when GDK_KEY_1 { self.gram: 1;                 False; }
     when GDK_KEY_2 { self.gram: 2;                 False; }
     when GDK_KEY_3 { self.gram: 3;                 False; }
@@ -378,14 +382,23 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_c { self.color;                   False; }
     when GDK_KEY_y { self.yank;                    False; }
     when GDK_KEY_p { self.paste;                   False; }
-    when GDK_KEY_n { self.new-cipher;              False; }
-    when GDK_KEY_d { $decipher = True;             False; }
+
+    when GDK_KEY_d {
+
+       $decipher = True;
+
+       False;
+
+    }
 
     when GDK_KEY_k {
 
       if $visual {
+
         $current-y -= 1 if $current-y > 0;
+
         self.visual: $start-x, $start-y, $current-x, $current-y;
+
       }
 
       False;
@@ -394,8 +407,11 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_j {
 
       if $visual {
+
         $current-y += 1 if $current-y < @!sym.rows - 1;
+
         self.visual: $start-x, $start-y, $current-x, $current-y;
+
       }
 
       False;
@@ -404,8 +420,11 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_h {
 
       if $visual {
+
         $current-x -= 1 if $current-x > 0;
+
         self.visual: $start-x, $start-y, $current-x, $current-y;
+
       }
 
       False;
@@ -414,8 +433,11 @@ submethod handle-key ( GdkEventAny:D $event ) {
     when GDK_KEY_l {
 
       if $visual {
+
         $current-x += 1 if $current-x < @!sym.columns - 1;
+
         self.visual: $start-x, $start-y, $current-x, $current-y;
+
       }
 
       False;
