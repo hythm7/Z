@@ -10,6 +10,7 @@ use GTK::Menu;
 use GTK::MenuItem;
 use GTK::Dialog::ColorChooser;
 use GTK::Dialog::FileChooser;
+use GTK::CSSProvider;;
 use Z::Cipher::Sym;
 use Z::Cipher::Utils;
 
@@ -73,7 +74,7 @@ method flip-horizontal ( ) {
 
   }
 
-	%!order{ +.FlowBoxChild.p } = $++ for @!sym;
+	%!order{ .get-child.name } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
 
   self.grams-count;
@@ -96,7 +97,7 @@ method flip-vertical ( ) {
 
   }
 
-  %!order{ +.FlowBoxChild.p } = $++ for @!sym;
+  %!order{ .get-child.name } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
 
   self.grams-count;
@@ -122,7 +123,7 @@ method rotate-clockwise ( ) {
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
 
-  %!order{ +.FlowBoxChild.p } = $++ for @!sym;
+  %!order{ .get-child.name } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
 
   self.grams-count;
@@ -148,7 +149,7 @@ method rotate-anticlockwise ( ) {
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
 
-  %!order{ +.FlowBoxChild.p } = $++ for @!sym;
+  %!order{ .get-child.name } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
 
   self.grams-count;
@@ -174,7 +175,7 @@ method transpose ( ) {
   $!flowbox.min_children_per_line = @!sym.columns;
   $!flowbox.max_children_per_line = @!sym.columns;
 
-  %!order{ +.FlowBoxChild.p } = $++ for @!sym;
+  %!order{ .get-child.name } = $++ for @!sym;
 	$!flowbox.invalidate-sort;
 
   self.grams-count;
@@ -215,10 +216,22 @@ method color ( ) {
 
   my $color = $!colorbox.rgba;
 
+  my $css = GTK::CSSProvider.new;
+
   my @child = $!flowbox.get-selected-children;
 
-  @child.map( *.get-child.override-color: GTK_STATE_FLAG_NORMAL, $color );
+  my $style = qq:to/END/;
 
+    {
+      @child.map( -> $child {
+
+        "#{ $child.get-child.name } \{ color: { $color.to_string }; \}";
+
+      } );
+    }
+    END
+
+  $css.load-from-data: $style;
 }
 
 method yank ( ) {
@@ -601,41 +614,48 @@ submethod TWEAK ( ) {
 
 multi submethod BUILD ( :@sym where { .all ~~ Z::Cipher::Sym }, :$rows!, :$columns! ) {
 
+  my $css = GTK::CSSProvider.new;
+
   for @sym {
 
     my $child = GTK::FlowBoxChild.new;
 
     my $label = .label;
-    #my $color = .get-color;
+
+    #my $color = $css.get-style-property: .self, 'color';
 
     my $sym = Z::Cipher::Sym.new: $label;
 
-    #$sym.override-color: GTK_STATE_FLAG_NORMAL, $color;
-
     $child.add: $sym;
+
+    $sym.name = $child.FlowBoxChild.p.Int;
 
     @!sym.push: $child;
 
-    @!sym.map( { %!order{ + .FlowBoxChild.p } = $++ } );
-
   }
 
-	@!sym does Grid[:$columns];
+  @!sym.map( { %!order{ .get-child.name } = $++ } );
+
+	@!sym does Grid[ :$columns ];
 }
 
 multi submethod BUILD ( :@sym! where { .all ~~ Str }, :$rows!, :$columns! ) {
 
-  for @sym -> $sym {
+  for @sym -> $label {
 
     my $child = GTK::FlowBoxChild.new;
 
-    $child.add:  Z::Cipher::Sym.new: $sym;
+    my $sym = Z::Cipher::Sym.new: $label;
+
+    $child.add: $sym;
+
+    $sym.name = $child.FlowBoxChild.p.Int;
 
     @!sym.push: $child;
 
-    @!sym.map( { %!order{ + .FlowBoxChild.p } = $++ } );
-
   }
+
+  @!sym.map( { %!order{ .get-child.name } = $++ } );
 
 	@!sym does Grid[ :$columns ];
  
