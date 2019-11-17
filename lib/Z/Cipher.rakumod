@@ -250,7 +250,7 @@ method paste ( ) {
 
   for @index Z @*yanked -> ( $index, $sym ) {
 
-    $!flowbox.get-child-at-index( $index ).get-child.label = $sym;
+    @!sym[ $index ].get-child.label = $sym;
 
   }
 
@@ -273,12 +273,11 @@ method visual ( $start-x, $start-y, $current-x, $current-y ) {
 
   for ( $start-x ... $current-x ) X ( $start-y ... $current-y ) -> ( $x, $y ) {
 
-   # WORKAROUND: Convert $x, $y to $index, till p6GtkPlus #43 resolved
    my $index = $x + ( $y * @!sym.columns );
 
    return unless 0 ≤ $index ≤ @!sym.end;
 
-   my $child =  $!flowbox.get-child-at-index( $index );
+   my $child =  @!sym[ $index ];
 
    $!flowbox.select-child( $child );
 
