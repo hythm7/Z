@@ -298,7 +298,7 @@ method new-cipher ( Bool:D :$selection = False ) {
 
   my $rows = @index.elems div $columns;
 
-  my @sym = @!sym[ @index ].map( *.get-child );
+  my Z::Cipher::Sym @sym = @!sym[ @index ].map( *.get-child );
 
   self.new: :@sym, :$rows, :$columns;
 
@@ -612,7 +612,7 @@ submethod TWEAK ( ) {
 
 }
 
-multi submethod BUILD ( :@sym where { .all ~~ Z::Cipher::Sym }, :$rows!, :$columns! ) {
+multi submethod BUILD ( Z::Cipher::Sym:D :@sym, :$rows!, :$columns! ) {
 
   my $css = GTK::CSSProvider.new;
 
@@ -622,7 +622,7 @@ multi submethod BUILD ( :@sym where { .all ~~ Z::Cipher::Sym }, :$rows!, :$colum
 
     my $label = .label;
 
-    #my $color = $css.get-style-property: .self, 'color';
+    # my $color = .get-style-context.get-color;
 
     my $sym = Z::Cipher::Sym.new: $label;
 
@@ -639,7 +639,7 @@ multi submethod BUILD ( :@sym where { .all ~~ Z::Cipher::Sym }, :$rows!, :$colum
 	@!sym does Grid[ :$columns ];
 }
 
-multi submethod BUILD ( :@sym! where { .all ~~ Str }, :$rows!, :$columns! ) {
+multi submethod BUILD ( Str:D :@sym!, :$rows!, :$columns! ) {
 
   for @sym -> $label {
 
@@ -674,7 +674,7 @@ multi method new ( IO::Path :$filename! ) {
 	my $rows    = $filename.lines.elems;
 	my $columns = $filename.lines[0].chars;
 
-	my @sym = $filename.comb( /\N/ );
+	my Str @sym = $filename.comb( /\N/ );
 
 	nextwith :@sym :$rows :$columns;
 
