@@ -552,6 +552,7 @@ submethod TWEAK ( ) {
 
   } );
 
+
   $!statusbar = GTK::Statusbar.new;
   $!statusbar.margin = 0;
 
@@ -598,7 +599,10 @@ submethod TWEAK ( ) {
 
   $!window.add( $box );
 
+
   $!window.show_all( );
+
+  $!flowbox.unselect-all;
 
   $!statusbar.push: $!statusbar.get-context-id( self ), self.grams.map( *.elems );
 
