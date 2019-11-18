@@ -291,6 +291,8 @@ method new-cipher ( Bool:D :$selection = False ) {
     ?? $!flowbox.get-selected-children.map( *.get-index ).sort
     !! @!sym.keys;
 
+  return unless @index;
+
   my $columns = @!sym.has-subgrid: :@index;
 
   return unless $columns;
@@ -298,6 +300,7 @@ method new-cipher ( Bool:D :$selection = False ) {
   my $rows = @index.elems div $columns;
 
   my Z::Cipher::Sym @sym = @!sym[ @index ].map( *.get-child );
+
 
   self.new: :@sym, :$rows, :$columns;
 

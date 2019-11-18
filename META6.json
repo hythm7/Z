@@ -11,7 +11,7 @@
         "Z" : "lib/Z.pm"
     },
     "depends" : [
-      "Grid"
+      "Grid:ver<0.0.4>:auth<github:hythm7>:api<*>"
     ],
     "build-depends" : [ ],
     "test-depends" : [ ],
