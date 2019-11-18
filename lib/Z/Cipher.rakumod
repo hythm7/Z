@@ -584,21 +584,14 @@ submethod TWEAK ( ) {
 
   my $box = GTK::Box.new-vbox( );
 
-  $box.name = 'xbox';
-
-  #    $box.size-allocate.tap( -> *@a {
-  #
-  #      my $size =  $box.get-preferred-size.head;
-  #
-  #      say "allocated {@a[1].width} {@a[1].height}";
-  #      say "preferred {$size.width} {$size.height}";
-  #
-  #      #$box.set-size-request( $size.width, $size.height );
-  #
-  #      $!window.resize( 1, 1 );
-  #
-  #
-  #    } );
+  # WORKAROUND: shrink window
+  $box.size-allocate.tap( -> *@a {
+  
+    my $size =  $box.get-preferred-size.head;
+  
+    $!window.resize( 1, 1 );
+  
+  } );
 
   $box.pack_start( $!flowbox );
   $box.pack_end( $!statusbar );
