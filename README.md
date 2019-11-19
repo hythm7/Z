@@ -102,3 +102,5 @@ Credits
 Thanks to [Xliff](https://github.com/Xliff) for being more than helpfull with addressing the issues I faced during working with `Z`, I literally started this project knowing nothing about `GTK`, I wouldn't be able to make `Z` up and running without his help.
 
 Thanks to the nice people on `#raku` irc channel
+
+The Zodiac.ttf font was downloaded from [here](http://www.zodiackillerciphers.com)
