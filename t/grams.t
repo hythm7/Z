@@ -1,14 +1,17 @@
 #!/usr/bin/env perl6
 
-#use Test;
+use Test;
 
-enum GRAM (
-  UNI   => 1,
-	BI    => 2,
-	TRI   => 3,
-	QUAD  => 4,
-	QUINT => 5,
-);
+sub gram ( :@sym!, Int:D :$gram! ) is export {
+
+  my $back =  1 - $gram;  # back step
+
+  gather for @sym.rotor( $gram => $back ).map(*.join ).Bag.pairs {
+
+    .take if .value > 1;
+
+  }
+}
 
 my $cipher = q:to/END/;
 abcd
@@ -19,17 +22,10 @@ qrst
 uvwx
 END
 
-multi gram (GRAM $g) {
-	my $b = 1 - $g;                 # back step
-	my @sym =  $cipher.comb(/\N/);
-  my $bag = @sym.rotor($g => $b).map(*.join).Bag;
+my @sym =  $cipher.comb(/\N/);
 
-	#.say for $bag.pairs;
-	my @gram = gather for $bag.pairs {
-		.take if .value > 1;
-	}
-  @gram;
+ok (b => 2,  c => 2,  a => 2) ~~ gram :@sym, :1gram;
+ok (ab => 2, bc => 2)         ~~ gram :@sym, :2gram;
 
-}
 
-say gram BI;
+
