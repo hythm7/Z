@@ -6,13 +6,13 @@ Z is Raku app to visualize the unsolved z340 cipher and perform different operat
 
 Overview
 =======
-The main cipher window consist of the cipher symbols, with each transformation the grams count ( uni-grams, bi-grams, tri-grams, ... and so on, if any ) will be printed to the status bar.
+The main cipher window consist of the cipher symbols, with each transpositions the grams count ( uni-grams, bi-grams, tri-grams, ... and so on, if any ) will be printed to the status bar.
 
 If you are familiar with `vi`, working with `Z` should be easy, as `Z` mimics some of `vi` commands. like visual mode for selection , copy/paste, replace (or decipher symbol). Mouse works as well.
 
-Transformation can be applied to the whole cipher or a selection of the cipher, Full list of transformation can be found on the Examples section  [here](https://github.com/hythm7/Grid/blob/master/README.md) 
+Transformation can be applied to the whole cipher or a selection of the cipher, Full list of transpositions can be found on the Examples section  [here](https://github.com/hythm7/Grid/blob/master/README.md) 
 
-`Z` is a visualising tool, it's not a bruteforce tool. Once you are happy with a transformation you can save it and use other tools to bruteforc it.
+`Z` is a visualising tool, it's not a bruteforce tool. Once you are happy with a transpositions you can save it and use other tools to bruteforc it.
 
 
 Installation and Running
