@@ -6,20 +6,16 @@
   font-size:   42px;
 }
 
-#xbox {
-  background-color: green;
+#cipher > :selected {
+  background-color: black;
+  color: transparent;
+  text-shadow: 0 0 4px rgba(242,242,242,.9);
 }
 
 statusbar {
   background-color: black;
   color: green;
   margin: 0px;
-}
-
-*:selected {
-  background-color: black;
-  color: transparent;
-  text-shadow: 0 0 4px rgba(242,242,242,.9);
 }
 
 button {

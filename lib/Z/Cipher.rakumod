@@ -624,7 +624,6 @@ submethod TWEAK ( ) {
 
 multi submethod BUILD ( Z::Cipher::Sym:D :@sym, :$rows!, :$columns! ) {
 
-  my $css = GTK::CSSProvider.new;
 
   for @sym {
 
@@ -632,13 +631,17 @@ multi submethod BUILD ( Z::Cipher::Sym:D :@sym, :$rows!, :$columns! ) {
 
     my $label = .label;
 
-    # my $color = .get-style-context.get-color;
-
     my $sym = Z::Cipher::Sym.new: $label;
 
     $child.add: $sym;
 
     $sym.name = $child.FlowBoxChild.p.Int;
+
+    my $color = .get-style-context.get-color: GTK_STATE_FLAG_NORMAL;
+
+    my $style = "#{ $child.get-child.name } \{ color: { $color.to_string }; \}";
+
+    GTK::CSSProvider.new.load-from-data: $style;
 
     @!sym.push: $child;
 
