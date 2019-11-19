@@ -6,7 +6,7 @@ Z is Raku app to visualize the unsolved z340 cipher and perform different operat
 
 Overview
 =======
-The main cipher window consist of the cipher symbols, with each transpositions the grams count ( uni-grams, bi-grams, tri-grams, ... and so on, if any ) will be printed to the status bar.
+The main cipher window consist of the cipher symbols, with each transposition, the grams count ( uni-grams, bi-grams, tri-grams, ... and so on, if any ) will be printed to the status bar.
 
 If you are familiar with `vi`, working with `Z` should be easy, as `Z` mimics some of `vi` commands. like visual mode for selection , copy/paste, replace (or decipher symbol). Mouse works as well.
 
@@ -57,7 +57,7 @@ Commands
 * `v` Activate / Deactivate `visual` mode (selection using `hjkl`)
 * `y` Yank selected symbols
 * `p` Paste yanked symbols
-* `d` Decipher current symbol ( Replace it with another letter (hopefully to compose a meaningful word)
+* `d` Decipher current symbol (Replace it with another letter (hopefully to compose a meaningful word)
 * `f` Flip horizontally
 * `F` Flip Vertically
 * `r` Rotate clockwise
