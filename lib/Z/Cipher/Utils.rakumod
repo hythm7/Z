@@ -6,12 +6,12 @@ sub gram ( :@sym!, Int:D :$gram! ) is export {
 
   gather for @sym.map( *.get-child.label ).rotor( $gram => $back ).map(*.join ).Bag.pairs {
 
-		take .key if .value > 1;
+		.take if .value > 1;
 
   }
 }
 
-sub grams ( :@sym!, :@grams, :$gram = 1 ) is export {
+sub grams ( :@sym!, :@grams, :$gram = 2 ) is export {
 
   my @result = gram :@sym :$gram;
 

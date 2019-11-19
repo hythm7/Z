@@ -6,13 +6,13 @@ Z is Raku app to visualize the unsolved z340 cipher and perform different operat
 
 Overview
 =======
-The main cipher window consist of the cipher symbols, with each transposition, the grams count ( uni-grams, bi-grams, tri-grams, ... and so on, if any ) will be printed to the status bar.
+The main cipher window consist of the cipher symbols, with each transposition, the grams count ( bi-grams, tri-grams, ... and so on, if any. Separated by a space ) will be printed to the status bar. if a count has `:` it means before colon is the  unique-grams, after colon is the total grams"
 
 If you are familiar with `vi`, working with `Z` should be easy, as `Z` mimics some of `vi` commands. like visual mode for selection , copy/paste, replace (or decipher symbol). Mouse works as well.
 
-Transformation can be applied to the whole cipher or a selection of the cipher, Full list of transpositions can be found on the Examples section  [here](https://github.com/hythm7/Grid/blob/master/README.md) 
+Transpositions can be applied to the whole cipher or a selection of the cipher, Full list of transpositions can be found in the Examples section  [here](https://github.com/hythm7/Grid/blob/master/README.md)
 
-`Z` is a visualising tool, it's not a bruteforce tool. Once you are happy with a transpositions you can save it and use other tools to bruteforc it.
+`Z` is a visualising tool, it's not a bruteforce tool. Once you are happy with a transposition you can save it and use other tools to bruteforc it.
 
 
 Installation and Running
@@ -47,7 +47,9 @@ Run `Z` as instructed by `P6-GtkPlus`:
 MVM_SPESH_INLINE_DISABLE=1 $P6_GTK_HOME/p6-GtkPlus/p6gtkexec bin/z
 # the SPESH env variable is a temporary workaround for a current issue
 ```
-Once app is running a File Chooser window will show where you can choose the cipher file path `cipher/z340` (or `cipher/test` if you want to experiment first) 
+Once app is running a File Chooser window will show where you can choose the cipher file path `cipher/z340` (or `cipher/test` if you want to experiment first)
+
+It is not the best idea to have an App depends on a non-production ready module since it can break anytime with updates to the module, But I will try to keep it updated and workign with GtkPlus master branch HEAD.
 
 
 Commands
@@ -82,8 +84,8 @@ Commands
 * `N` Open a new cipher with same state of selection in current cipher
 * `Q` Close current cipher window
 * `Hit Space on a selected symbol` Select all similar symbols and print count to status bar
-* `Return` Deactivate `visual` mode 
-* `Esc` Unselect all and deactivate `visual` mode 
+* `Return` Deactivate `visual` mode
+* `Esc` Unselect all and deactivate `visual` mode
 * `Right click -> save` Save current cipher state to a file
 * `Right click -> quit` Close current cipher window
 
@@ -93,7 +95,7 @@ License
 
 `Artistic-2.0`.
 
-If you solved the `z340` cipher with help of `Z`, Please mention `Z` ;-) 
+If you solved the `z340` cipher with help of `Z`, Please mention `Z` ;-)
 
 
 Credits

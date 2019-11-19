@@ -39,7 +39,18 @@ method grams ( Bool:D :$selection = False ) {
 
 method grams-count ( Bool:D :$selection = False ) {
 
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams( :$selection ).map( +* );
+  my @count = self.grams( :$selection ).map( -> @gram {
+
+    my $unique-grams = +@gram;
+    my $all-grams    = @gram.map( *.value ).sum - $unique-grams;
+
+    $unique-grams ~~ $all-grams
+      ?? "$unique-grams"
+      !! "$unique-grams:$all-grams";
+
+  } );
+
+  $!statusbar.push: $!statusbar.get-context-id( self ), @count;
 
 }
 
@@ -52,7 +63,7 @@ method gram ( Int:D $gram ) {
   my $back = 1 - $gram;
 
   @!sym.rotor( $gram => $back )
-    ==> grep({ .map( *.get-child.label ).join ~~ any @gram } )
+    ==> grep({ .map( *.get-child.label ).join ~~ any @gram.map( *.key ) } )
     ==> flat( )
     ==> map( -> $child { $!flowbox.select-child: $child } );
 
@@ -500,7 +511,7 @@ submethod TWEAK ( ) {
   $!window = GTK::Window.new: GTK_WINDOW_TOPLEVEL, :title<Cipher>;
 
   $!flowbox = GTK::FlowBox.new;
- 
+
   $!flowbox.halign = GTK_ALIGN_START;
   $!flowbox.valign = GTK_ALIGN_START;
 
@@ -590,11 +601,11 @@ submethod TWEAK ( ) {
 
   # WORKAROUND: shrink window
   $box.size-allocate.tap( -> *@a {
-  
+
     my $size =  $box.get-preferred-size.head;
-  
+
     $!window.resize( 1, 1 );
-  
+
   } );
 
   $box.pack_start( $!flowbox );
@@ -607,7 +618,7 @@ submethod TWEAK ( ) {
 
   $!flowbox.unselect-all;
 
-  $!statusbar.push: $!statusbar.get-context-id( self ), self.grams.map( *.elems );
+  self.grams-count;
 
 }
 
@@ -657,7 +668,7 @@ multi submethod BUILD ( Str:D :@sym!, :$rows!, :$columns! ) {
   @!sym.map( { %!order{ .get-child.name } = $++ } );
 
 	@!sym does Grid[ :$columns ];
- 
+
 }
 
 multi method new ( :@sym!, :$rows!, :$columns! ) {
